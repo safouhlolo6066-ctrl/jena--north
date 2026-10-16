@@ -5,20 +5,20 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <title>ميني اب الشمالية</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#0B2447">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
 /* Layout: one phone-sized column. Header with role switch, scrolling view, bottom tab bar. Two roles share one demo state so a rep's visit shows up in the supervisor summary. */
 :root {
-  --bg: #EEF3F4;
+  --bg: #F2F6FC;
   --card: #FFFFFF;
-  --ink: #14262B;
-  --mute: #5B6F75;
-  --line: #D8E3E5;
-  --accent: #0B7A86;
+  --ink: #0B2447;
+  --mute: #5A6E8C;
+  --line: #D6E0F0;
+  --accent: #1D5FD1;
   --accent-ink: #FFFFFF;
-  --accent-soft: #D7EEF0;
-  --ok: #2C7A52;
+  --accent-soft: #E1ECFC;
+  --ok: #1F7A4D;
   --ok-soft: #DCF0E4;
   --warn: #9A6A12;
   --warn-soft: #F8EACB;
@@ -29,34 +29,34 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0E1A1D; --card: #162428; --ink: #E6F0F1; --mute: #92A8AD; --line: #27393E;
-    --accent: #3CB6C2; --accent-ink: #06171A; --accent-soft: #15383D;
+    --bg: #07142B; --card: #0F2347; --ink: #EAF1FF; --mute: #9DB3D6; --line: #1E3868;
+    --accent: #4C8DF5; --accent-ink: #FFFFFF; --accent-soft: #17325F;
     --ok: #5FC48E; --ok-soft: #173326; --warn: #E3B659; --warn-soft: #3A2E12; --bad: #F08A7E; --bad-soft: #3D1D19;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0E1A1D; --card: #162428; --ink: #E6F0F1; --mute: #92A8AD; --line: #27393E;
-  --accent: #3CB6C2; --accent-ink: #06171A; --accent-soft: #15383D;
+  --bg: #07142B; --card: #0F2347; --ink: #EAF1FF; --mute: #9DB3D6; --line: #1E3868;
+  --accent: #4C8DF5; --accent-ink: #FFFFFF; --accent-soft: #17325F;
   --ok: #5FC48E; --ok-soft: #173326; --warn: #E3B659; --warn-soft: #3A2E12; --bad: #F08A7E; --bad-soft: #3D1D19;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.55; margin: 0; }
-body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--card); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: #0B2447; }
 button, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .app { max-width: 520px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; }
-header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--card); border-bottom: 1px solid var(--line);
+header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: #0B2447; color: #FFFFFF; border-bottom: 1px solid #0B2447;
   padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 8px; }
 .brand { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .brand h1 { font-family: var(--display); font-weight: 800; font-size: 18px; margin: 0; }
-.brand small { color: var(--mute); font-size: 12px; }
-.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--bg); border-radius: 10px; padding: 3px; gap: 3px; }
-.seg button { border: 0; background: transparent; padding: 8px 10px; border-radius: 8px; font-weight: 600; color: var(--mute); }
-.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.brand small { color: #B9CBEA; font-size: 12px; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: rgba(255,255,255,.12); border-radius: 10px; padding: 3px; gap: 3px; }
+.seg button { border: 0; background: transparent; padding: 8px 10px; border-radius: 8px; font-weight: 600; color: #DCE7FA; }
+.seg button[aria-pressed="true"] { background: #FFFFFF; color: #0B2447; }
 .demo-note { font-size: 12px; color: var(--warn); background: var(--warn-soft); border-radius: 8px; padding: 5px 10px; }
 main { flex: 1; padding: 14px max(16px, env(safe-area-inset-right, 0px)) 96px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 12px; align-content: start; }
 h2 { font-family: var(--display); font-size: 17px; font-weight: 800; margin: 0; }
@@ -95,7 +95,7 @@ nav { position: fixed; inset: auto 0 0 0; z-index: 20; background: var(--card); 
 nav .in { max-width: 520px; margin: 0 auto; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
 nav button { border: 0; background: transparent; padding: 9px 4px; border-radius: 10px; color: var(--mute); font-weight: 600; font-size: 13px; }
 nav button[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
-.sheet-bg { position: fixed; inset: 0; background: rgba(8, 20, 24, .55); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
+.sheet-bg { position: fixed; inset: 0; background: rgba(5, 14, 32, .55); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
 .sheet { background: var(--bg); width: 100%; max-width: 520px; max-height: 88%; overflow: auto; border-radius: 18px 18px 0 0; padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 12px; }
 .step { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
 .qty { display: flex; align-items: center; gap: 8px; }
@@ -308,6 +308,6 @@ td { padding: 8px 6px; border-top: 1px solid var(--line); }
 })();
 </script>
 
-<script>try{var T=window.Telegram&&Telegram.WebApp;if(T){T.ready();T.expand();}}catch(e){}</script>
+<script>try{var T=window.Telegram&&Telegram.WebApp;if(T){T.ready();T.expand();try{T.setHeaderColor("#0B2447");}catch(e){}}}catch(e){}</script>
 
 </html>
