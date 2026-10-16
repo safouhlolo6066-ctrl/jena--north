@@ -117,7 +117,7 @@ td { padding: 8px 6px; border-top: 1px solid var(--line); }
       <button type="button" data-a="role" data-v="rep" id="b-rep">مندوب</button>
       <button type="button" data-a="role" data-v="sup" id="b-sup">مشرف</button>
     </div>
-    <div class="demo-note">نسخة تجريبية: الأسماء والأرقام مخترعة ولا يُحفظ شيء في أي مكان.</div>
+    <div class="demo-note">نسخة تجريبية: الأسماء مخترعة ولا يُحفظ شيء في أي مكان.</div>
   </header>
   <main id="view"></main>
   <nav><div class="in" id="nav"></div></nav>
@@ -132,22 +132,16 @@ td { padding: 8px 6px; border-top: 1px solid var(--line); }
   var money = function (n) { return "$" + Math.round(n).toLocaleString("en-US"); };
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
 
-  var PRODUCTS = [
-    { id: 1, n: "مياه معبأة 1.5 لتر (صندوق)", p: 4.2 }, { id: 2, n: "عصير تفاح (صندوق)", p: 6.5 },
-    { id: 3, n: "رقائق بطاطا (صندوق)", p: 9 }, { id: 4, n: "بسكويت بالتمر (صندوق)", p: 7.8 },
-    { id: 5, n: "معكرونة (كرتونة)", p: 11 }, { id: 6, n: "زيت دوار الشمس (كرتونة)", p: 19 },
-    { id: 7, n: "سكر ناعم (كيس 50 كغ)", p: 31 }, { id: 8, n: "شاي أسود (كرتونة)", p: 24 }
-  ];
-  var REASONS = ["عنده بضاعة", "لا يوجد مال", "المحل مغلق", "السعر مرتفع", "غير مهتم"];
-  var TARGET = { visits: 8, inv: 6, sales: 600, skus: 8 };
+  var REASONS = ["المحل مغلق", "صاحب المحل غير موجود", "رفض الزيارة", "سبب آخر"];
+  var TARGET = { visits: 8 };
 
   var S = {
     role: "rep", tab: { rep: "line", sup: "calls" },
     shops: [
       ["سوبرماركت النور", "الفرقان", 38], ["بقالة الأمين", "الأعظمية", 120], ["مول الشهباء", "حلب الجديدة", 64], ["ميني ماركت السلام", "صلاح الدين", 210],
       ["بقالة أبو خالد", "الميدان", 85], ["سوبرماركت الفردوس", "الفردوس", 150], ["محل الياسمين", "العزيزية", 47], ["بقالة الرحمة", "الجميلية", 99]
-    ].map(function (a, i) { return { id: i + 1, name: a[0], area: a[1], dist: a[2], st: "todo", reason: "", total: 0 }; }),
-    invoices: [], collected: 0, skus: {}, sheet: null,
+    ].map(function (a, i) { return { id: i + 1, name: a[0], area: a[1], dist: a[2], st: "todo", reason: "" }; }),
+    sheet: null,
     calls: [
       { id: 1, shop: "بقالة السعادة", rep: "إبراهيم علوش", phone: "0944 000 111", date: "أمس", res: "pending", note: "" },
       { id: 2, shop: "سوبرماركت القمر", rep: "محمد قرموطة", phone: "0955 000 222", date: "أمس", res: "pending", note: "" },
@@ -163,71 +157,42 @@ td { padding: 8px 6px; border-top: 1px solid var(--line); }
 
   function toast(t) { var e = $("#toast"); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { e.hidden = true; }, 2200); }
 
-  /* ---------- rep score, same weights as the real system ---------- */
-  function repScore() {
-    var done = S.shops.filter(function (s) { return s.st !== "todo"; }).length;
-    var sales = S.invoices.reduce(function (a, i) { return a + i.total; }, 0);
-    var sk = Object.keys(S.skus).length;
-    var cap = function (x) { return Math.max(0, Math.min(1, x)); };
-    var parts = { plan: cap(done / TARGET.visits) * 20, shops: cap(done / TARGET.visits) * 15, inv: cap(S.invoices.length / TARGET.inv) * 20, money: cap(sales / TARGET.sales) * 25, skus: cap(sk / TARGET.skus) * 20 };
-    var fakes = S.calls.filter(function (c) { return c.res === "fake" && c.rep === "محمد قرموطة"; }).length;
-    var total = Math.max(0, parts.plan + parts.shops + parts.inv + parts.money + parts.skus - fakes * 5);
-    return { parts: parts, total: total, fakes: fakes, done: done, sales: sales, sk: sk };
+  function repCount() {
+    var done = S.shops.filter(function (x) { return x.st === "visited"; }).length;
+    var miss = S.shops.filter(function (x) { return x.st === "nosale"; }).length;
+    return { done: done, miss: miss, left: S.shops.length - done - miss };
   }
-  function level(t) { return t >= 85 ? ["ممتاز", "ok"] : t >= 70 ? ["جيد", "acc"] : t >= 50 ? ["مقبول", "warn"] : ["صاحب العزيمة", "bad"]; }
 
   /* ---------- rep views ---------- */
   function repLine() {
-    var r = repScore();
+    var r = repCount();
     var h = '<div class="card"><div class="row"><h2>خط اليوم</h2><span class="chip acc num">' + r.done + " من " + TARGET.visits + '</span></div>' +
       '<div class="bar"><i style="width:' + Math.round(r.done / TARGET.visits * 100) + '%"></i></div>' +
       '<div class="mute">مندوب تجريبي: محمد قرموطة · مفرق · الأربعاء</div></div><div class="list">';
     S.shops.forEach(function (s) {
-      var chip = s.st === "sold" ? '<span class="chip ok">بيع ' + money(s.total) + "</span>" : s.st === "nosale" ? '<span class="chip warn">' + esc(s.reason) + "</span>" : '<span class="chip">لم تُزر</span>';
+      var chip = s.st === "visited" ? '<span class="chip ok">تمت الزيارة</span>' : s.st === "nosale" ? '<span class="chip warn">' + esc(s.reason) + "</span>" : '<span class="chip">لم تُزر</span>';
       h += '<button type="button" class="item" data-a="open" data-v="' + s.id + '"' + (s.st !== "todo" ? " disabled" : "") + "><span><b>" + esc(s.name) + '</b><span class="mute">' + esc(s.area) + "</span></span>" + chip + "</button>";
     });
     return h + "</div>";
   }
   function repSummary() {
-    var r = repScore(), L = level(r.total), debt = r.sales - S.collected;
-    var h = '<div class="card"><div class="row"><h2>ملخص اليوم</h2><span class="chip ' + L[1] + '">' + L[0] + "</span></div>" +
-      '<div class="row"><span class="mute">علامة اليوم</span><b class="num" style="font-family:var(--display);font-size:28px">' + Math.round(r.total) + '<small class="mute"> / 100</small></b></div></div>' +
-      '<div class="tiles"><div class="tile"><b>' + r.done + '</b><span>زيارات</span></div><div class="tile"><b>' + S.invoices.length + '</b><span>فواتير</span></div><div class="tile"><b>' + money(r.sales) + "</b><span>مبيعات</span></div></div>" +
-      '<div class="card"><h3>كيف حُسبت العلامة</h3><table><tbody>';
-    [["الالتزام بالخطة", r.parts.plan, 20], ["المحلات المزارة", r.parts.shops, 15], ["الفواتير", r.parts.inv, 20], ["المال (هدف " + money(TARGET.sales) + ")", r.parts.money, 25], ["الأصناف (" + r.sk + " من " + TARGET.skus + ")", r.parts.skus, 20]].forEach(function (x) {
-      h += "<tr><td>" + x[0] + '</td><td class="num" style="text-align:left">' + x[1].toFixed(1) + " / " + x[2] + "</td></tr>";
-    });
-    if (r.fakes) h += '<tr><td>زيارات وهمية</td><td class="num" style="text-align:left;color:var(--bad)">-' + r.fakes * 5 + "</td></tr>";
-    h += "</tbody></table></div>" +
-      '<div class="card"><div class="row"><span>المحصّل نقداً</span><b class="num">' + money(S.collected) + '</b></div><div class="row"><span>دين اليوم</span><b class="num">' + money(Math.max(0, debt)) + "</b></div></div>";
-    return h;
+    var r = repCount();
+    return '<div class="card"><h2>ملخص اليوم</h2></div>' +
+      '<div class="tiles"><div class="tile"><b>' + r.done + '</b><span>تمت زيارتها</span></div><div class="tile"><b>' + r.miss + '</b><span>لم تتم</span></div><div class="tile"><b>' + r.left + "</b><span>متبقية</span></div></div>";
   }
   function repSheet() {
     var sh = S.sheet, s = S.shops.filter(function (x) { return x.id === sh.id; })[0];
     var h = '<div class="sheet-bg" data-a="closebg"><div class="sheet" role="dialog" aria-label="زيارة"><div class="row"><div><h2>' + esc(s.name) + '</h2><div class="mute">' + esc(s.area) + '</div></div><button type="button" class="chip" data-a="close">إغلاق</button></div>' +
       '<div class="step"><span class="mute">الموقع (تجريبي)</span><span class="chip ok">على بعد ' + s.dist + " م · الدقة 12 م</span></div>";
     if (sh.step === "result") {
-      h += '<div class="grid2"><button type="button" class="opt" data-a="sell">بيع</button><button type="button" class="opt" data-a="nosale">لم يشترِ</button></div>';
-    } else if (sh.step === "reason") {
-      h += "<h3>سبب عدم الشراء</h3><div class=\"list\">";
+      h += '<div class="grid2"><button type="button" class="opt" data-a="visited">تمت الزيارة</button><button type="button" class="opt" data-a="nosale">لم تتم</button></div>';
+    } else {
+      h += "<h3>السبب</h3><div class=\"list\">";
       REASONS.forEach(function (r) { h += '<button type="button" class="opt" data-a="reason" data-v="' + esc(r) + '">' + esc(r) + "</button>"; });
       h += "</div>";
-    } else if (sh.step === "cart") {
-      var tot = 0; h += "<h3>الأصناف</h3><div class=\"list\">";
-      PRODUCTS.forEach(function (p) {
-        var q = sh.cart[p.id] || 0; tot += q * p.p;
-        h += '<div class="step"><span>' + esc(p.n) + '<br><span class="mute num">' + money(p.p) + '</span></span><div class="qty"><button type="button" data-a="q" data-v="' + p.id + '" data-d="-1" aria-label="أنقص">−</button><span>' + q + '</span><button type="button" data-a="q" data-v="' + p.id + '" data-d="1" aria-label="زِد">+</button></div></div>';
-      });
-      h += '</div><div class="row"><b>المجموع</b><b class="num">' + money(tot) + '</b></div><button type="button" class="btn" data-a="topay"' + (tot ? "" : " disabled") + ">التالي: الدفع</button>";
-    } else if (sh.step === "pay") {
-      var t2 = cartTotal(sh);
-      h += '<div class="row"><b>مجموع الفاتورة</b><b class="num">' + money(t2) + '</b></div><div class="grid2"><button type="button" class="opt" data-a="paymode" data-v="cash" aria-pressed="' + (sh.pay === "cash") + '">نقد</button><button type="button" class="opt" data-a="paymode" data-v="credit" aria-pressed="' + (sh.pay === "credit") + '">آجل</button></div>' +
-        '<label class="mute" for="paid">المبلغ المقبوض بالدولار</label><input id="paid" type="number" inputmode="decimal" min="0" value="' + sh.paid + '" data-a="paid">' +
-        '<div class="row mute"><span>المتبقي دين</span><span class="num" id="debt">' + money(Math.max(0, t2 - sh.paid)) + '</span></div><button type="button" class="btn" data-a="save">حفظ الفاتورة</button>';
     }
     return h + "</div></div>";
   }
-  function cartTotal(sh) { return PRODUCTS.reduce(function (a, p) { return a + (sh.cart[p.id] || 0) * p.p; }, 0); }
 
   /* ---------- supervisor views ---------- */
   function supCalls() {
@@ -240,7 +205,7 @@ td { padding: 8px 6px; border-top: 1px solid var(--line); }
     if (!pend.length) return h + '<div class="card"><b>انتهت اتصالات اليوم.</b><span class="mute">يظهر ملخصها في تبويب الملخص.</span></div>';
     var c = pend[0];
     if (S.confirmFake === c.id) {
-      return h + '<div class="card"><h3>تأكيد</h3><b>هل نفى الزبون أن المندوب زاره؟</b><span class="mute">سيصل إشعار فوري للإدارة ويُخصم من تقييم المندوب.</span><button type="button" class="btn bad" data-a="fakeyes">نعم، أكّد</button><button type="button" class="btn ghost" data-a="fakeno">رجوع</button></div>';
+      return h + '<div class="card"><h3>تأكيد</h3><b>هل نفى الزبون أن المندوب زاره؟</b><span class="mute">سيصل إشعار فوري للإدارة </span><button type="button" class="btn bad" data-a="fakeyes">نعم، أكّد</button><button type="button" class="btn ghost" data-a="fakeno">رجوع</button></div>';
     }
     return h + '<div class="card"><div class="row"><h2>' + esc(c.shop) + '</h2><span class="chip">' + esc(c.date) + '</span></div><div class="mute">المندوب: ' + esc(c.rep) + '</div><div class="row"><span class="mute">الهاتف</span><b class="num" dir="ltr">' + esc(c.phone) + '</b></div>' +
       '<div class="grid2"><button type="button" class="opt" data-a="call" data-v="ok">تم</button><button type="button" class="opt" data-a="call" data-v="no_answer">لم يرد</button><button type="button" class="opt" data-a="call" data-v="weak">ضعيفة</button><button type="button" class="opt" data-a="call" data-v="postponed">لاحقاً</button></div>' +
@@ -282,13 +247,13 @@ td { padding: 8px 6px; border-top: 1px solid var(--line); }
     var done = S.calls.filter(function (x) { return x.res !== "pending"; }).length;
     var avg = S.audits.length ? (S.audits.reduce(function (a, x) { return a + x.score; }, 0) / S.audits.length).toFixed(1) : "—";
     var notv = S.audits.filter(function (x) { return x.rv === "n"; }).length;
-    var r = repScore(), L = level(r.total);
-    var rows = [["إبراهيم علوش", 88, 14, 9], ["محمد قرموطة (حي)", r.total, r.done, S.invoices.length], ["محمد مكتبي", 52, 8, 3], ["معتز هنو", 79, 12, 0]];
+    var r = repCount();
+    var rows = [["إبراهيم علوش", 14], ["محمد قرموطة (حي)", r.done], ["محمد مكتبي", 8], ["معتز هنو", 12]];
     var h = '<div class="card"><h2>ملخص اليوم</h2><div class="tiles"><div class="tile"><b>' + done + "/" + S.calls.length + "</b><span>اتصالات</span></div><div class=\"tile\"><b>" + S.audits.length + "</b><span>تدقيق</span></div><div class=\"tile\"><b class=\"num\">" + avg + "</b><span>متوسط التقييم</span></div></div>" +
       '<div><span class="chip ok">تم ' + c.ok + '</span> <span class="chip">لم يرد ' + c.no_answer + '</span> <span class="chip warn">ضعيفة ' + c.weak + '</span> <span class="chip bad">وهمية ' + c.fake + '</span> <span class="chip acc">لاحقاً ' + c.postponed + "</span></div>" +
       (notv ? '<div class="chip bad">مندوب لم يزر المحل: ' + notv + "</div>" : "") + "</div>" +
-      '<div class="card"><h3>تقييم المناديب اليوم</h3><div class="scroll-x"><table><thead><tr><th>المندوب</th><th>العلامة</th><th>زيارات</th><th>فواتير</th></tr></thead><tbody>';
-    rows.forEach(function (x) { var l = level(x[1]); h += "<tr><td>" + esc(x[0]) + '</td><td class="num"><span class="chip ' + l[1] + '">' + Math.round(x[1]) + " " + l[0] + '</span></td><td class="num">' + x[2] + '</td><td class="num">' + x[3] + "</td></tr>"; });
+      '<div class="card"><h3>زيارات المناديب اليوم</h3><div class="scroll-x"><table><thead><tr><th>المندوب</th><th>الزيارات</th></tr></thead><tbody>';
+    rows.forEach(function (x) { h += "<tr><td>" + esc(x[0]) + '</td><td class="num">' + x[1] + "</td></tr>"; });
     return h + "</tbody></table></div></div>" + (c.fake ? '<div class="card"><b class="chip bad" style="justify-self:start">إشعار أُرسل للإدارة</b><span class="mute">زيارة وهمية مكتشفة اليوم: ' + c.fake + "</span></div>" : "");
   }
 
@@ -305,31 +270,18 @@ td { padding: 8px 6px; border-top: 1px solid var(--line); }
     $("#sheet-root").innerHTML = S.sheet ? repSheet() : "";
   }
 
-  document.addEventListener("input", function (e) {
-    if (e.target.id === "paid" && S.sheet) { S.sheet.paid = Math.max(0, parseFloat(e.target.value) || 0); var d = $("#debt"); if (d) d.textContent = money(Math.max(0, cartTotal(S.sheet) - S.sheet.paid)); }
-  });
   document.addEventListener("click", function (e) {
     var el = e.target.closest("[data-a]"); if (!el) return;
     var a = el.getAttribute("data-a"), v = el.getAttribute("data-v"), sh = S.sheet;
     if (a === "closebg") { if (e.target !== el) return; S.sheet = null; return render(); }
     if (a === "close") { S.sheet = null; return render(); }
-    if (a === "paid") return;
     if (a === "role") { S.role = v; S.sheet = null; return render(); }
     if (a === "tab") { S.tab[S.role] = v; return render(); }
     /* rep */
-    if (a === "open") { S.sheet = { id: +v, step: "result", cart: {}, pay: "cash", paid: 0 }; return render(); }
-    if (a === "sell") { sh.step = "cart"; return render(); }
+    if (a === "open") { S.sheet = { id: +v, step: "result" }; return render(); }
+    if (a === "visited") { var s0 = S.shops.filter(function (x) { return x.id === sh.id; })[0]; s0.st = "visited"; S.sheet = null; toast("سُجّلت الزيارة"); return render(); }
     if (a === "nosale") { sh.step = "reason"; return render(); }
-    if (a === "reason") { var s1 = S.shops.filter(function (x) { return x.id === sh.id; })[0]; s1.st = "nosale"; s1.reason = v; S.sheet = null; toast("سُجّلت الزيارة: " + v); return render(); }
-    if (a === "q") { var id = +v, q = (sh.cart[id] || 0) + (+el.getAttribute("data-d")); sh.cart[id] = Math.max(0, q); return render(); }
-    if (a === "topay") { sh.step = "pay"; sh.paid = cartTotal(sh); return render(); }
-    if (a === "paymode") { sh.pay = v; sh.paid = v === "cash" ? cartTotal(sh) : 0; return render(); }
-    if (a === "save") {
-      var tot = cartTotal(sh), s2 = S.shops.filter(function (x) { return x.id === sh.id; })[0];
-      S.invoices.push({ shop: s2.name, total: tot }); S.collected += Math.min(tot, sh.paid);
-      PRODUCTS.forEach(function (p) { if (sh.cart[p.id]) S.skus[p.id] = 1; });
-      s2.st = "sold"; s2.total = tot; S.sheet = null; toast("حُفظت الفاتورة " + money(tot)); return render();
-    }
+    if (a === "reason") { var s1 = S.shops.filter(function (x) { return x.id === sh.id; })[0]; s1.st = "nosale"; s1.reason = v; S.sheet = null; toast("سُجّل: " + v); return render(); }
     /* supervisor calls */
     if (a === "call") {
       var pend = S.calls.filter(function (c) { return c.res === "pending"; })[0]; if (!pend) return;
