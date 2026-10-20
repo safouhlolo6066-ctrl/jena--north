@@ -65,6 +65,15 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
 .day[aria-pressed="true"]{background:var(--sky-3);color:#fff;border-color:var(--sky-3)}.day.today{box-shadow:0 0 0 2px var(--red) inset}
 .area{font-family:var(--display);font-weight:700;font-size:13.5px;color:var(--sky-3);margin-top:6px}
 .msg{padding:28px 18px;text-align:center;display:grid;gap:10px;justify-items:center}
+.tabs4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.srch{width:100%;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:11px 12px}
+.shop{background:var(--card);border:1px solid var(--line);border-inline-start:4px solid var(--line);border-radius:14px;padding:12px 13px;display:grid;gap:10px;box-shadow:var(--shadow)}
+.shop.done{border-inline-start-color:#1F8A4C}.shop.miss{border-inline-start-color:#E08A00}
+.shop .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.shop .nm{font-weight:700}.shop .idx{background:var(--chip);color:var(--mute);border-radius:50%;min-width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.btn.ok2{background:#1F8A4C}.btn.warn2{background:#C77A00}
+.sel{width:100%;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:11px 12px}
+.note{background:#E8F3FD;color:var(--sky-3);border-radius:12px;padding:10px 12px;text-align:center;font-weight:600}
 .sk{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:14px}
 </style>
 </head>
@@ -93,7 +102,7 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
   if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
 
   var sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, storageKey: "north-auth", autoRefreshToken: true } });
-  var S = { me: null, tab: "", line: [], lineOwner: null, week: 1, day: "", team: [], sup: null, sheet: null, busy: false, err: "" };
+  var S = { filter: "all", q: "", open: null, me: null, tab: "", line: [], lineOwner: null, week: 1, day: "", team: [], sup: null, sheet: null, busy: false, err: "" };
   try { S.week = Number(localStorage.getItem("north-week")) || 1; } catch (e) {}
 
   function todayName() {
@@ -198,23 +207,40 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
     });
     h += "</div>";
     var cur = rows.filter(function (x) { return x.day === dayKey(S.day, S.week); });
-    var done = cur.filter(function (x) { return x.res === "visited"; }).length, miss = cur.filter(function (x) { return x.res === "nosale"; }).length;
-    var sum = cur.reduce(function (a, x) { return a + Number(x.target || 0); }, 0);
-    h += '<div class="card"><div class="row"><h2>' + esc(S.day) + " · أسبوع " + S.week + '</h2><span class="chip acc num">' + cur.length + ' محل</span></div>' +
-      '<div class="bar"><i style="width:' + (cur.length ? Math.round((done + miss) / cur.length * 100) : 0) + '%"></i></div>' +
-      '<div class="mute num">تمت ' + done + " · لم تتم " + miss + " · هدف المحلات " + money(sum) + " شهرياً</div></div>";
+    var st = function (x) { return x.res || x.testDone || ""; };
+    var done = cur.filter(function (x) { return st(x) === "visited"; }).length, miss = cur.filter(function (x) { return st(x) === "nosale"; }).length;
+    var left = cur.length - done - miss;
+    h += '<div class="card"><div class="row"><h2>خط اليوم — ' + esc(S.lineOwner ? S.lineOwner.name : S.me.name) + '</h2><span class="mute">' + esc(S.day) + " · أسبوع " + S.week + '</span></div>' +
+      '<div class="tiles"><div class="tile"><b class="num">' + done + '<small class="mute">/' + cur.length + '</small></b><span>انزار</span></div><div class="tile"><b class="num">' + miss + '</b><span>لم يتم</span></div><div class="tile"><b class="num">' + left + '</b><span>باقي</span></div></div>' +
+      '<div class="bar"><i style="width:' + (cur.length ? Math.round((done + miss) / cur.length * 100) : 0) + '%"></i></div></div>';
+    if (S.lineOwner) h += S.admin ? '<div class="note">🧪 وضع تجربة — الزيارات التي تسجّلها هنا لا تُحتسب</div>' : '<div class="note">👁 نسختك للمشاهدة فقط — المندوب هو من يسجّل</div>';
     if (!cur.length) return h + '<div class="card"><span class="mute">لا توجد محلات في هذا اليوم.</span></div>';
-    var byArea = {};
-    cur.forEach(function (x) { (byArea[x.area || "بدون منطقة"] = byArea[x.area || "بدون منطقة"] || []).push(x); });
-    Object.keys(byArea).sort().forEach(function (a) {
-      h += '<div class="area">' + esc(a) + ' <span class="mute num">(' + byArea[a].length + ")</span></div><div class=\"list\">";
-      byArea[a].forEach(function (x) {
-        var st = x.res === "visited" ? '<span class="chip ok">تمت</span>' : x.res === "nosale" ? '<span class="chip warn">' + esc(x.reason || "لم تتم") + "</span>" : "";
-        h += '<button type="button" class="item" data-a="shop" data-v="' + x.id + '"><span><b><i class="tier t-' + (TIER[x.tier] || "C") + '"></i>' + esc(x.name) + '</b><span class="mute num">هدف ' + money(x.target) + " · متوسط " + money(x.avg) + "</span></span>" + st + "</button>";
-      });
-      h += "</div>";
-    });
+    h += '<div class="tabs4">' + [["all", "الكل"], ["left", "الباقي"], ["done", "انزار"], ["miss", "لم يتم"]].map(function (t) { return '<button type="button" class="opt" data-a="flt" data-v="' + t[0] + '" aria-pressed="' + (S.filter === t[0]) + '">' + t[1] + "</button>"; }).join("") + "</div>";
+    h += '<input class="srch" id="q" placeholder="بحث — اسم محل أو منطقة" value="' + esc(S.q) + '" aria-label="بحث"><div class="list" id="lst">' + shopsHtml() + "</div>";
     return h;
+  }
+  function canMark() { return (isRep(S.me.role) && !S.lineOwner) || !!(S.lineOwner && S.admin); }
+  function shopsHtml() {
+    var cur = S.line.filter(function (x) { return x.day === dayKey(S.day, S.week); }), q = S.q.trim();
+    var st = function (x) { return x.res || x.testDone || ""; };
+    var vis = cur.filter(function (x) {
+      var s = st(x);
+      if (S.filter === "left" && s) return false; if (S.filter === "done" && s !== "visited") return false; if (S.filter === "miss" && s !== "nosale") return false;
+      return !q || (x.name || "").indexOf(q) > -1 || (x.area || "").indexOf(q) > -1;
+    });
+    if (!vis.length) return '<div class="card"><span class="mute">لا نتائج.</span></div>';
+    return vis.map(function (x, i) {
+      var s = st(x), tst = !x.res && x.testDone;
+      var h = '<div class="shop ' + (s === "visited" ? "done" : s === "nosale" ? "miss" : "") + '"><div class="top"><div><div class="nm"><i class="tier t-' + (TIER[x.tier] || "C") + '"></i>' + esc(x.name) + '</div><div class="mute">' + esc(x.area || "") + " · هدف " + money(x.target) + " · متوسط " + money(x.avg) + '</div></div><span class="idx num">' + (i + 1) + "</span></div>";
+      if (x.flag) h += '<div><span class="chip warn">' + esc(x.flag) + "</span></div>";
+      if (s) h += '<div class="row"><span class="chip ' + (s === "visited" ? "ok" : "warn") + '">' + (s === "visited" ? "✅ انزار" : "⭕ لم يتم زيارته" + (x.reason ? " · " + esc(x.reason) : "")) + (tst ? " (تجربة)" : "") + "</span></div>";
+      else if (canMark()) {
+        h += '<div class="grid2"><button type="button" class="btn ok2" data-a="vis" data-v="' + x.id + '"' + (S.busy ? " disabled" : "") + '>✅ انزار</button><button type="button" class="btn ghost" data-a="novis" data-v="' + x.id + '">⭕ لم يتم زيارته</button></div>';
+        if (S.open === x.id) h += '<select class="sel" id="rs" aria-label="السبب">' + REASONS.map(function (r) { return "<option>" + esc(r) + "</option>"; }).join("") + '</select><button type="button" class="btn warn2" data-a="novisgo" data-v="' + x.id + '"' + (S.busy ? " disabled" : "") + ">📍 سجّل: لم يتم زيارته</button>";
+      }
+      h += '<button type="button" class="chip acc" data-a="shop" data-v="' + x.id + '" style="justify-self:start">🎯 أهداف الأصناف</button></div>';
+      return h;
+    }).join("");
   }
   function goalsView() {
     var rows = S.line, total = 0, avg = 0, byTier = { A: 0, B: 0, C: 0, Z: 0 }, byDay = {};
@@ -276,14 +302,6 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
       if (sh.skus == null) h += '<div class="mute">جاري التحميل…</div>';
       else if (!sh.skus.length) h += '<div class="mute">لا أصناف مستهدفة.</div>';
       else sh.skus.forEach(function (k) { h += '<div class="sk"><span>' + esc(k.name) + '</span><span class="num">' + money(k.target_usd) + "</span></div>"; });
-      if (S.lineOwner && /^(admin|gm)$/.test(S.me.role)) {
-        if (x.testDone) h += '<div class="step"><span>زيارة تجريبية (لا تُحتسب)</span><span class="chip ok">' + (x.testDone === "visited" ? "تمت" : "لم تتم") + "</span></div>";
-        else h += '<button type="button" class="btn" data-a="startvisit">تجربة تسجيل زيارة (لا تُحتسب)</button>';
-      }
-      if (isRep(S.me.role) && !S.lineOwner) {
-        if (x.res) h += '<div class="step"><span>سُجّلت زيارة اليوم</span><span class="chip ok">' + (x.res === "visited" ? "تمت" : "لم تتم") + "</span></div>";
-        else h += '<button type="button" class="btn" data-a="startvisit">تسجيل زيارة</button>';
-      }
     } else if (sh.step === "result") {
       h += '<div class="step"><span class="mute">الموقع</span><span class="chip ' + (sh.geo ? "ok" : "warn") + '">' + (sh.geo ? "تم الالتقاط · دقة " + sh.acc + " م" : sh.geoMsg || "جاري تحديد الموقع…") + "</span></div>" +
         '<div class="grid2"><button type="button" class="opt" data-a="visited">تمت الزيارة</button><button type="button" class="opt" data-a="nosale">لم تتم</button></div>';
@@ -322,13 +340,22 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
     navigator.geolocation.getCurrentPosition(function (p) { sh.geo = { lat: p.coords.latitude, lng: p.coords.longitude }; sh.acc = Math.round(p.coords.accuracy); render(); },
       function () { sh.geoMsg = "تعذر الموقع (تُسجَّل الزيارة بدونه)"; render(); }, { enableHighAccuracy: true, timeout: 9000, maximumAge: 20000 });
   }
-  async function save(result, reason) {
-    var sh = S.sheet, test = !!S.lineOwner, p = { p_client_id: (test ? "test-" : "") + uuid(), p_customer: sh.id, p_result: result, p_reason: reason || "", p_lat: sh.geo ? sh.geo.lat : null, p_lng: sh.geo ? sh.geo.lng : null, p_acc: sh.acc || null };
-    var st = await sendVisit(p), x = S.line.filter(function (r) { return r.id === sh.id; })[0];
-    if (st === "reject") { toast("لا يمكن تسجيل هذه الزيارة"); S.sheet = null; render(); return; }
-    if (st === "retry") { var q = qget(); q.push(p); qset(q); toast("حُفظت على الجهاز وستُرسل عند عودة الاتصال"); } else toast("تم تسجيل الزيارة");
-    if (x) { if (test) x.testDone = result; else { x.res = result; x.reason = reason || null; } }
-    S.sheet = null; render();
+  function geoOnce() {
+    return new Promise(function (res) {
+      if (!navigator.geolocation) return res(null);
+      var tm = setTimeout(function () { res(null); }, 10000), r0 = res; res = function (v) { clearTimeout(tm); r0(v); };
+      navigator.geolocation.getCurrentPosition(function (p) { res({ lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy) }); }, function () { res(null); }, { enableHighAccuracy: true, timeout: 9000, maximumAge: 20000 });
+    });
+  }
+  async function save(id, result, reason) {
+    S.busy = true; render();
+    var g = await geoOnce(), test = !!S.lineOwner, x = S.line.filter(function (r) { return r.id === id; })[0];
+    var p = { p_client_id: (test ? "test-" : "") + uuid(), p_customer: id, p_result: result, p_reason: reason || "", p_lat: g ? g.lat : null, p_lng: g ? g.lng : null, p_acc: g ? g.acc : null };
+    var st = await sendVisit(p); S.busy = false; S.open = null;
+    if (st === "reject") { toast("لا يمكن تسجيل هذه الزيارة"); render(); return; }
+    if (st === "retry") { var q = qget(); q.push(p); qset(q); toast("حُفظت على الجهاز وستُرسل عند عودة الاتصال"); } else toast(g ? "تم تسجيل الزيارة" : "تم تسجيل الزيارة (بدون موقع)");
+    if (x) { if (test) { x.testDone = result; x.reason = reason || null; } else { x.res = result; x.reason = reason || null; } }
+    render();
   }
   document.addEventListener("click", async function (e) {
     var b = e.target.closest("[data-a]"); if (!b) return;
@@ -352,10 +379,10 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
       if (S.sheet && S.sheet.id === v) { S.sheet.skus = r.error ? [] : r.data; render(); }
       return;
     }
-    if (a === "startvisit") { S.sheet.step = "result"; render(); getGeo(S.sheet); return; }
-    if (a === "visited") { await save("visited", ""); return; }
-    if (a === "nosale") { S.sheet.step = "reason"; render(); return; }
-    if (a === "reason") { await save("nosale", v); return; }
+    if (a === "vis") { await save(v, "visited", ""); return; }
+    if (a === "novis") { S.open = S.open === v ? null : v; render(); return; }
+    if (a === "novisgo") { var sel = $("#rs"); await save(v, "nosale", sel ? sel.value : ""); return; }
+    if (a === "flt") { S.filter = v; render(); return; }
   });
 
   /* ---------- start ---------- */
@@ -366,7 +393,7 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
       var u = (await sb.auth.getUser()).data.user;
       var p = await sb.from("profiles").select("id,name,role,status").eq("id", u.id).maybeSingle();
       if (!p.data || p.data.status !== "active") { msg("حسابك غير مفعّل", "تواصل مع الإدارة.", true); return; }
-      S.me = p.data;
+      S.me = p.data; S.admin = /^(admin|gm)$/.test(S.me.role);
       if (isRep(S.me.role)) { S.tab = "line"; await loadMyLine(); flush(); }
       else { S.tab = "team"; await loadTeam(); }
       render();
@@ -376,6 +403,7 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
     if (document.visibilityState !== "visible" || !S.me) return;
     try { var u = await sb.auth.getUser(); if (u.error) { location.reload(); return; } if (!isRep(S.me.role)) { if (S.tab === "team") { await loadTeam(); } else if (S.tab === "sup") { await loadSup(); } render(); } } catch (e) {}
   });
+  document.addEventListener("input", function (e) { if (e.target && e.target.id === "q") { S.q = e.target.value; var l = $("#lst"); if (l) l.innerHTML = shopsHtml(); } });
   window.addEventListener("online", function () { if (S.me) flush(); });
 })();
 
