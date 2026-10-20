@@ -276,6 +276,10 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
       if (sh.skus == null) h += '<div class="mute">جاري التحميل…</div>';
       else if (!sh.skus.length) h += '<div class="mute">لا أصناف مستهدفة.</div>';
       else sh.skus.forEach(function (k) { h += '<div class="sk"><span>' + esc(k.name) + '</span><span class="num">' + money(k.target_usd) + "</span></div>"; });
+      if (S.lineOwner && /^(admin|gm)$/.test(S.me.role)) {
+        if (x.testDone) h += '<div class="step"><span>زيارة تجريبية (لا تُحتسب)</span><span class="chip ok">' + (x.testDone === "visited" ? "تمت" : "لم تتم") + "</span></div>";
+        else h += '<button type="button" class="btn" data-a="startvisit">تجربة تسجيل زيارة (لا تُحتسب)</button>';
+      }
       if (isRep(S.me.role) && !S.lineOwner) {
         if (x.res) h += '<div class="step"><span>سُجّلت زيارة اليوم</span><span class="chip ok">' + (x.res === "visited" ? "تمت" : "لم تتم") + "</span></div>";
         else h += '<button type="button" class="btn" data-a="startvisit">تسجيل زيارة</button>';
@@ -319,11 +323,11 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
       function () { sh.geoMsg = "تعذر الموقع (تُسجَّل الزيارة بدونه)"; render(); }, { enableHighAccuracy: true, timeout: 9000, maximumAge: 20000 });
   }
   async function save(result, reason) {
-    var sh = S.sheet, p = { p_client_id: uuid(), p_customer: sh.id, p_result: result, p_reason: reason || "", p_lat: sh.geo ? sh.geo.lat : null, p_lng: sh.geo ? sh.geo.lng : null, p_acc: sh.acc || null };
+    var sh = S.sheet, test = !!S.lineOwner, p = { p_client_id: (test ? "test-" : "") + uuid(), p_customer: sh.id, p_result: result, p_reason: reason || "", p_lat: sh.geo ? sh.geo.lat : null, p_lng: sh.geo ? sh.geo.lng : null, p_acc: sh.acc || null };
     var st = await sendVisit(p), x = S.line.filter(function (r) { return r.id === sh.id; })[0];
     if (st === "reject") { toast("لا يمكن تسجيل هذه الزيارة"); S.sheet = null; render(); return; }
     if (st === "retry") { var q = qget(); q.push(p); qset(q); toast("حُفظت على الجهاز وستُرسل عند عودة الاتصال"); } else toast("تم تسجيل الزيارة");
-    if (x) { x.res = result; x.reason = reason || null; }
+    if (x) { if (test) x.testDone = result; else { x.res = result; x.reason = reason || null; } }
     S.sheet = null; render();
   }
   document.addEventListener("click", async function (e) {
