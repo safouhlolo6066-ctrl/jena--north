@@ -370,8 +370,7 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
     if (a === "rep") {
       var t = S.team[Number(v)];
       if (!t.shops) { toast("لا خط لهذا المندوب"); return; }
-      try { S.err = ""; await loadRepLine(t); S.tab = "line"; S.day = ""; } catch (er) { S.err = "تعذر تحميل الخط"; }
-      render(); return;
+      location.href = "line.html?roster=" + encodeURIComponent(t.roster_id); return;
     }
     if (a === "shop") {
       S.sheet = { id: v, step: "info", skus: null }; render();
@@ -394,7 +393,7 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
       var p = await sb.from("profiles").select("id,name,role,status").eq("id", u.id).maybeSingle();
       if (!p.data || p.data.status !== "active") { msg("حسابك غير مفعّل", "تواصل مع الإدارة.", true); return; }
       S.me = p.data; S.admin = /^(admin|gm)$/.test(S.me.role);
-      if (isRep(S.me.role)) { S.tab = "line"; await loadMyLine(); flush(); }
+      if (isRep(S.me.role)) { location.replace("line.html"); return; }
       else { S.tab = "team"; await loadTeam(); }
       render();
     } catch (er) { msg("حدث خطأ", String(er && er.message || er), true); }
