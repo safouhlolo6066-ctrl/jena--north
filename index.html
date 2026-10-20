@@ -111,7 +111,11 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
   }
   async function login() {
     var s = (await sb.auth.getSession()).data.session;
-    if (s) return true;
+    if (s) {
+      var chk = await sb.auth.getUser();
+      if (!chk.error && chk.data && chk.data.user) return true;
+      try { await sb.auth.signOut(); } catch (e) {}
+    }
     var init = tg && tg.initData;
     if (!init) { msg("افتح التطبيق من البوت", "هذا التطبيق يعمل من داخل تلغرام: افتح @Jenanorth_bot واضغط زر التطبيق."); return false; }
     var r, j;
@@ -357,13 +361,17 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
       if (!(await login())) return;
       var u = (await sb.auth.getUser()).data.user;
       var p = await sb.from("profiles").select("id,name,role,status").eq("id", u.id).maybeSingle();
-      if (!p.data || p.data.status !== "active") { await sb.auth.signOut(); msg("حسابك غير مفعّل", "تواصل مع الإدارة."); return; }
+      if (!p.data || p.data.status !== "active") { msg("حسابك غير مفعّل", "تواصل مع الإدارة.", true); return; }
       S.me = p.data;
       if (isRep(S.me.role)) { S.tab = "line"; await loadMyLine(); flush(); }
       else { S.tab = "team"; await loadTeam(); }
       render();
     } catch (er) { msg("حدث خطأ", String(er && er.message || er), true); }
   })();
+  document.addEventListener("visibilitychange", async function () {
+    if (document.visibilityState !== "visible" || !S.me) return;
+    try { var u = await sb.auth.getUser(); if (u.error) { location.reload(); return; } if (!isRep(S.me.role)) { if (S.tab === "team") { await loadTeam(); } else if (S.tab === "sup") { await loadSup(); } render(); } } catch (e) {}
+  });
   window.addEventListener("online", function () { if (S.me) flush(); });
 })();
 
