@@ -3,190 +3,254 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<title>ميني اب الشمالية</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<title>جينا الشمالية (معاينة)</title>
 <meta name="theme-color" content="#0B2447">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
-/* Layout: one phone-sized column. Header with role switch, scrolling view, bottom tab bar. Two roles share one demo state so a rep's visit shows up in the supervisor summary. */
-:root {
-  --bg: #F2F6FC;
-  --card: #FFFFFF;
-  --ink: #0B2447;
-  --mute: #5A6E8C;
-  --line: #D6E0F0;
-  --accent: #1D5FD1;
-  --accent-ink: #FFFFFF;
-  --accent-soft: #E1ECFC;
-  --ok: #1F7A4D;
-  --ok-soft: #DCF0E4;
-  --warn: #9A6A12;
-  --warn-soft: #F8EACB;
-  --bad: #B5382C;
-  --bad-soft: #F8DDD9;
-  --display: "Cairo", "IBM Plex Sans Arabic", system-ui, sans-serif;
-  --body: "IBM Plex Sans Arabic", system-ui, -apple-system, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #07142B; --card: #0F2347; --ink: #EAF1FF; --mute: #9DB3D6; --line: #1E3868;
-    --accent: #4C8DF5; --accent-ink: #FFFFFF; --accent-soft: #17325F;
-    --ok: #5FC48E; --ok-soft: #173326; --warn: #E3B659; --warn-soft: #3A2E12; --bad: #F08A7E; --bad-soft: #3D1D19;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #07142B; --card: #0F2347; --ink: #EAF1FF; --mute: #9DB3D6; --line: #1E3868;
-  --accent: #4C8DF5; --accent-ink: #FFFFFF; --accent-soft: #17325F;
-  --ok: #5FC48E; --ok-soft: #173326; --warn: #E3B659; --warn-soft: #3A2E12; --bad: #F08A7E; --bad-soft: #3D1D19;
-  color-scheme: dark;
-}
-* { box-sizing: border-box; }
-html, body { height: 100%; }
-body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.55; margin: 0; }
-body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: #0B2447; }
-button, input, textarea { font: inherit; color: inherit; }
-button { cursor: pointer; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.app { max-width: 520px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; }
-header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: #0B2447; color: #FFFFFF; border-bottom: 1px solid #0B2447;
-  padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 8px; }
-.brand { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.brand h1 { font-family: var(--display); font-weight: 800; font-size: 18px; margin: 0; }
-.brand small { color: #B9CBEA; font-size: 12px; }
-.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: rgba(255,255,255,.12); border-radius: 10px; padding: 3px; gap: 3px; }
-.seg button { border: 0; background: transparent; padding: 8px 10px; border-radius: 8px; font-weight: 600; color: #DCE7FA; }
-.seg button[aria-pressed="true"] { background: #FFFFFF; color: #0B2447; }
-.demo-note { font-size: 12px; color: var(--warn); background: var(--warn-soft); border-radius: 8px; padding: 5px 10px; }
-main { flex: 1; padding: 14px max(16px, env(safe-area-inset-right, 0px)) 96px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 12px; align-content: start; }
-h2 { font-family: var(--display); font-size: 17px; font-weight: 800; margin: 0; }
-h3 { font-size: 14px; margin: 0; color: var(--mute); font-weight: 600; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
-.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
-.row > * { min-width: 0; }
-.mute { color: var(--mute); font-size: 13px; }
-.num { font-variant-numeric: tabular-nums; }
-.bar { height: 8px; background: var(--bg); border-radius: 6px; overflow: hidden; }
-.bar i { display: block; height: 100%; background: var(--accent); border-radius: 6px; transition: width .25s; }
-.chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 20px; background: var(--bg); color: var(--mute); white-space: nowrap; }
-.chip.ok { background: var(--ok-soft); color: var(--ok); }
-.chip.warn { background: var(--warn-soft); color: var(--warn); }
-.chip.bad { background: var(--bad-soft); color: var(--bad); }
-.chip.acc { background: var(--accent-soft); color: var(--accent); }
-.list { display: grid; gap: 8px; }
-.item { width: 100%; text-align: right; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.item b { display: block; }
-.item:disabled { opacity: .75; cursor: default; }
-.btn { border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 600; padding: 12px 14px; border-radius: 10px; width: 100%; }
-.btn.ghost { background: var(--accent-soft); color: var(--accent); }
-.btn.bad { background: var(--bad); color: #fff; }
-.btn:disabled { opacity: .45; cursor: default; }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.grid6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
-.opt { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 11px 6px; font-weight: 600; text-align: center; }
-.opt[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.tile { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px; text-align: center; }
-.tile b { display: block; font-family: var(--display); font-size: 20px; font-variant-numeric: tabular-nums; }
-.tile span { font-size: 12px; color: var(--mute); }
-nav { position: fixed; inset: auto 0 0 0; z-index: 20; background: var(--card); border-top: 1px solid var(--line);
-  padding: 6px max(10px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); }
-nav .in { max-width: 520px; margin: 0 auto; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
-nav button { border: 0; background: transparent; padding: 9px 4px; border-radius: 10px; color: var(--mute); font-weight: 600; font-size: 13px; }
-nav button[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
-.sheet-bg { position: fixed; inset: 0; background: rgba(5, 14, 32, .55); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
-.sheet { background: var(--bg); width: 100%; max-width: 520px; max-height: 88%; overflow: auto; border-radius: 18px 18px 0 0; padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 12px; }
-.step { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
-.qty { display: flex; align-items: center; gap: 8px; }
-.qty button { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--line); background: var(--card); font-size: 18px; font-weight: 700; }
-.qty span { min-width: 22px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
-input[type="text"], input[type="tel"], input[type="number"], textarea { width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); }
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th { text-align: right; color: var(--mute); font-weight: 600; font-size: 12px; padding: 4px 6px; }
-td { padding: 8px 6px; border-top: 1px solid var(--line); }
-.scroll-x { overflow-x: auto; }
-#toast { position: fixed; inset: auto 16px calc(84px + env(safe-area-inset-bottom, 0px)) 16px; z-index: 60; background: var(--ink); color: var(--bg); padding: 11px 14px; border-radius: 10px; text-align: center; font-weight: 600; max-width: 480px; margin: 0 auto; }
-@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+:root{--ink:#12305E;--mute:#4A6488;--line:#DCE6F1;--bg:#F3F7FB;--card:#FFFFFF;--sky-1:#6BB8E8;--sky-2:#3D95D6;--sky-3:#2B80C4;
+--red:#EC1C24;--red-d:#C81526;--accent:#2B80C4;--accent-soft:#EAF2FA;--chip:#EAF2FA;
+--ok:#1F8A4C;--ok-soft:#E3F4EA;--warn:#B7791F;--warn-soft:#FCF1DC;--bad:#C81526;--bad-soft:#FDE8E9;
+--shadow:0 1px 2px rgba(18,48,94,.06),0 4px 14px rgba(18,48,94,.06);
+--display:'Alexandria','IBM Plex Sans Arabic',Tahoma,sans-serif;--body:'IBM Plex Sans Arabic',Tahoma,'Segoe UI',sans-serif}
+@media (prefers-color-scheme:dark){:root{--ink:#E4EDF8;--mute:#9DB2CC;--line:#26374F;--bg:#0D1726;--card:#13213A;--sky-1:#1E4E7E;--sky-2:#1A4170;--sky-3:#163760;--accent:#6BB8E8;--accent-soft:#1B2D4A;--chip:#1B2D4A;--ok:#5FC48E;--ok-soft:#123222;--warn:#E3B659;--warn-soft:#352812;--bad:#F08A7E;--bad-soft:#3A1418;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.55;margin:0}
+button,input,textarea{font:inherit;color:inherit}button{cursor:pointer}
+:focus-visible{outline:2px solid var(--sky-2);outline-offset:2px}
+.app{max-width:480px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;background:var(--card)}
+header{position:relative;background:linear-gradient(170deg,var(--sky-1) 0%,var(--sky-2) 55%,var(--sky-3) 100%);color:#fff;padding:calc(12px + env(safe-area-inset-top,0px)) 18px 50px}
+header .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+header img{height:36px;width:auto;filter:drop-shadow(0 3px 8px rgba(0,0,0,.25))}
+header .pill{font-size:12px;background:rgba(255,255,255,.22);padding:5px 11px;border-radius:999px}
+header h2{font-family:var(--display);font-weight:700;font-size:20px;margin:10px 0 0;color:#fff}
+header .sub{font-size:13px;color:#EAF6FF}
+header svg{position:absolute;left:0;bottom:-1px;width:100%;height:44px}header svg path{fill:var(--card)}
+main{flex:1;padding:0 16px 96px;display:grid;gap:12px;align-content:start}
+h2{font-family:var(--display);font-size:15px;font-weight:700;margin:0}
+h3{font-size:13px;margin:0;color:var(--mute);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:10px;min-width:0}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}.row>*{min-width:0}
+.mute{color:var(--mute);font-size:12.5px}
+.num{font-variant-numeric:tabular-nums}
+.bar{height:8px;background:var(--chip);border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:var(--sky-2);border-radius:5px;transition:width .25s}
+.chip{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--chip);color:var(--mute);white-space:nowrap;border:0}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}.chip.warn{background:var(--warn-soft);color:var(--warn)}.chip.bad{background:var(--bad-soft);color:var(--bad)}.chip.acc{background:var(--chip);color:var(--sky-3)}
+.list{display:grid;gap:8px}
+.item{width:100%;text-align:right;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 13px;display:flex;justify-content:space-between;align-items:center;gap:10px;box-shadow:var(--shadow)}
+.item b{display:block;font-weight:600}
+.btn{border:0;background:var(--red);color:#fff;font-weight:700;padding:12px 14px;border-radius:12px;width:100%}.btn:hover{background:var(--red-d)}
+.btn.ghost{background:var(--chip);color:var(--ink)}.btn.bad{background:var(--red-d)}.btn:disabled{opacity:.45}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.grid6{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.opt{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:11px 6px;font-weight:600;text-align:center}
+.opt[aria-pressed="true"]{background:var(--sky-3);color:#fff;border-color:var(--sky-3)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.tile b{display:block;font-family:var(--display);font-weight:800;font-size:19px;font-variant-numeric:tabular-nums}.tile span{font-size:12px;color:var(--mute)}
+nav{position:fixed;inset:auto 0 0 0;z-index:20;background:var(--card);border-top:1px solid var(--line);padding:4px 10px calc(4px + env(safe-area-inset-bottom,0px))}
+nav .in{max-width:480px;margin:0 auto;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px}
+nav button{border:0;background:none;padding:9px 4px;border-radius:10px;color:var(--mute);font-weight:600;font-size:13px}
+nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:var(--chip)}
+.sheet-bg{position:fixed;inset:0;background:rgba(10,27,51,.55);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:480px;max-height:88%;overflow:auto;border-radius:20px 20px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));display:grid;gap:12px}
+.step{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 12px}
+#toast{position:fixed;inset:auto 16px calc(80px + env(safe-area-inset-bottom,0px)) 16px;z-index:60;background:var(--ink);color:var(--bg);padding:11px 14px;border-radius:12px;text-align:center;max-width:448px;margin:0 auto}
+.tier{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:6px}
+.t-A{background:#1F8A4C}.t-B{background:#D9A400}.t-C{background:#9DB3D6}.t-Z{background:#1B1B1B}
+.day{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:9px 2px;font-weight:600;text-align:center;font-size:12.5px}
+.day[aria-pressed="true"]{background:var(--sky-3);color:#fff;border-color:var(--sky-3)}.day.today{box-shadow:0 0 0 2px var(--red) inset}
+.area{font-family:var(--display);font-weight:700;font-size:13.5px;color:var(--sky-3);margin-top:6px}
+.msg{padding:28px 18px;text-align:center;display:grid;gap:10px;justify-items:center}
+.sk{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:14px}
 </style>
-
+</head>
+<body>
 <div class="app" dir="rtl" lang="ar">
-  <header>
-    <div class="brand"><h1>جينا الشمالية</h1><small id="who"></small></div>
-    <div class="seg" role="group" aria-label="الدور">
-      <button type="button" data-a="role" data-v="rep" id="b-rep">مندوب</button>
-      <button type="button" data-a="role" data-v="sup" id="b-sup">مشرف</button>
-    </div>
-    <div class="demo-note">نسخة تجريبية: الأسماء مخترعة ولا يُحفظ شيء في أي مكان.</div>
-  </header>
+  <header><div class="row"><img src="logo.png" alt="جينا"><span class="pill" id="who"></span></div><h2 id="ttl">جينا الشمالية</h2><svg viewBox="0 0 390 44" preserveAspectRatio="none" aria-hidden="true"><path d="M0 24 C 40 6, 70 40, 112 22 C 150 6, 168 32, 205 20 C 250 4, 280 36, 322 20 C 352 10, 372 14, 390 12 L 390 44 L 0 44 Z"/></svg></header>
   <main id="view"></main>
   <nav><div class="in" id="nav"></div></nav>
 </div>
 <div id="sheet-root"></div>
 <div id="toast" hidden></div>
-
 <script>
 (function () {
   "use strict";
+  var SB_URL = "https://bohqhtwpwmjgncfokssu.supabase.co";
+  var SB_KEY = "sb_publishable_aqnwKrAqpTADZQO3Tl8NNQ_6-0Vcoqx";
   var $ = function (s) { return document.querySelector(s); };
-  var money = function (n) { return "$" + Math.round(n).toLocaleString("en-US"); };
-  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
-
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+  var money = function (n) { return "$" + Math.round(Number(n) || 0).toLocaleString("en-US"); };
+  var DAYS = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"];
+  var WD = { Saturday: "السبت", Sunday: "الأحد", Monday: "الاثنين", Tuesday: "الثلاثاء", Wednesday: "الأربعاء", Thursday: "الخميس", Friday: "" };
+  var ROLE_AR = { rep: "مندوب مفرق", rep_wholesale: "مندوب جملة", rep_key: "مندوب كبار عملاء", rep_cover: "مندوب تغطية", sup_retail: "مشرف", sup_wholesale: "مشرف جملة", sup_key: "مشرف كبار عملاء", admin: "مدير", gm: "مدير عام", sales_manager: "مدير مبيعات", area_manager: "مدير منطقة" };
   var REASONS = ["المحل مغلق", "صاحب المحل غير موجود", "رفض الزيارة", "سبب آخر"];
-  var TARGET = { visits: 8 };
+  var TIER = { A: "A", B: "B", C: "C", Z: "Z" };
+  var tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
 
-  var S = {
-    role: "rep", tab: { rep: "line", sup: "calls" },
-    shops: [
-      ["سوبرماركت النور", "الفرقان", 38], ["بقالة الأمين", "الأعظمية", 120], ["مول الشهباء", "حلب الجديدة", 64], ["ميني ماركت السلام", "صلاح الدين", 210],
-      ["بقالة أبو خالد", "الميدان", 85], ["سوبرماركت الفردوس", "الفردوس", 150], ["محل الياسمين", "العزيزية", 47], ["بقالة الرحمة", "الجميلية", 99]
-    ].map(function (a, i) { return { id: i + 1, name: a[0], area: a[1], dist: a[2], st: "todo", reason: "" }; }),
-    sheet: null,
-    calls: [
-      { id: 1, shop: "بقالة السعادة", rep: "إبراهيم علوش", phone: "0944 000 111", date: "أمس", res: "pending", note: "" },
-      { id: 2, shop: "سوبرماركت القمر", rep: "محمد قرموطة", phone: "0955 000 222", date: "أمس", res: "pending", note: "" },
-      { id: 3, shop: "محل الأصيل", rep: "محمد مكتبي", phone: "0933 000 333", date: "أمس", res: "pending", note: "" },
-      { id: 4, shop: "بقالة الندى", rep: "إبراهيم علوش", phone: "0966 000 444", date: "أمس", res: "pending", note: "" },
-      { id: 5, shop: "ميني ماركت الورد", rep: "محمد قرموطة", phone: "0944 000 555", date: "أمس", res: "pending", note: "" },
-      { id: 6, shop: "مول الأمل", rep: "معتز هنو", phone: "0988 000 666", date: "أمس", res: "pending", note: "" }
-    ],
-    confirmFake: null, noteFor: null,
-    audits: [], aud: null
-  };
-  var NEARBY = [["سوبرماركت الزهراء", 55], ["بقالة العروبة", 130], ["محل الشام", 190]];
+  var sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, storageKey: "north-auth", autoRefreshToken: true } });
+  var S = { me: null, tab: "", line: [], lineOwner: null, week: 1, day: "", team: [], sheet: null, busy: false, err: "" };
+  try { S.week = Number(localStorage.getItem("north-week")) || 1; } catch (e) {}
 
-  function toast(t) { var e = $("#toast"); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { e.hidden = true; }, 2200); }
+  function todayName() {
+    var n = new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone: "Asia/Damascus" }).format(new Date());
+    return WD[n] || "";
+  }
+  function toast(t) { var e = $("#toast"); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { e.hidden = true; }, 2400); }
+  function isRep(r) { return /^rep/.test(r || ""); }
+  function uuid() { return (crypto.randomUUID ? crypto.randomUUID() : "v" + Date.now() + Math.random().toString(16).slice(2)); }
 
-  function repCount() {
-    var done = S.shops.filter(function (x) { return x.st === "visited"; }).length;
-    var miss = S.shops.filter(function (x) { return x.st === "nosale"; }).length;
-    return { done: done, miss: miss, left: S.shops.length - done - miss };
+  /* ---------- login ---------- */
+  function msg(title, body, retry) {
+    $("#view").innerHTML = '<div class="card msg"><h2>' + esc(title) + '</h2><div class="mute">' + esc(body) + "</div>" + (retry ? '<button type="button" class="btn" data-a="retry">إعادة المحاولة</button>' : "") + "</div>";
+    $("#nav").innerHTML = "";
+  }
+  async function login() {
+    var s = (await sb.auth.getSession()).data.session;
+    if (s) return true;
+    var init = tg && tg.initData;
+    if (!init) { msg("افتح التطبيق من البوت", "هذا التطبيق يعمل من داخل تلغرام: افتح @Jenanorth_bot واضغط زر التطبيق."); return false; }
+    var r, j;
+    try {
+      r = await fetch(SB_URL + "/functions/v1/north-auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ initData: init }) });
+      j = await r.json();
+    } catch (e) { msg("لا يوجد اتصال", "تأكد من الإنترنت ثم أعد المحاولة.", true); return false; }
+    if (!j.ok) {
+      var m = { not_linked: ["حسابك غير مربوط بعد", "أرسل رسالة للبوت ليصل طلبك للإدارة، وبعد الموافقة يفتح التطبيق."], not_active: ["حسابك بانتظار التفعيل", "الإدارة لم تفعّل حسابك بعد."], expired: ["انتهت الجلسة", "أغلق التطبيق وافتحه من البوت من جديد."], bad_signature: ["تعذر التحقق", "افتح التطبيق من داخل بوت الشمالية."] }[j.err] || ["تعذر الدخول", "حاول مرة أخرى (" + (j.err || "؟") + ")."];
+      msg(m[0], m[1], j.err === "server" || j.err === "link_failed"); return false;
+    }
+    var o = await sb.auth.verifyOtp({ token_hash: j.token_hash, type: "magiclink" });
+    if (o.error) { msg("تعذر الدخول", o.error.message, true); return false; }
+    return true;
   }
 
-  /* ---------- rep views ---------- */
-  function repLine() {
-    var r = repCount();
-    var h = '<div class="card"><div class="row"><h2>خط اليوم</h2><span class="chip acc num">' + r.done + " من " + TARGET.visits + '</span></div>' +
-      '<div class="bar"><i style="width:' + Math.round(r.done / TARGET.visits * 100) + '%"></i></div>' +
-      '<div class="mute">مندوب تجريبي: محمد قرموطة · مفرق · الأربعاء</div></div><div class="list">';
-    S.shops.forEach(function (s) {
-      var chip = s.st === "visited" ? '<span class="chip ok">تمت الزيارة</span>' : s.st === "nosale" ? '<span class="chip warn">' + esc(s.reason) + "</span>" : '<span class="chip">لم تُزر</span>';
-      h += '<button type="button" class="item" data-a="open" data-v="' + s.id + '"' + (s.st !== "todo" ? " disabled" : "") + "><span><b>" + esc(s.name) + '</b><span class="mute">' + esc(s.area) + "</span></span>" + chip + "</button>";
+  /* ---------- data ---------- */
+  function norm(rows, staff) {
+    return rows.map(function (x) {
+      if (staff) return { id: x.customer_id, name: x.customers && x.customers.name, area: x.customers && x.customers.area, day: x.visit_day, tier: x.tier, target: x.target_usd, avg: x.avg_monthly_usd, flag: x.flag, res: x.res || null, reason: x.reason || null };
+      return { id: x.customer_id, name: x.name, area: x.area, day: x.visit_day, tier: x.tier, target: x.target_usd, avg: x.avg_monthly_usd, flag: x.flag, res: x.today_result, reason: x.today_reason };
+    });
+  }
+  async function loadMyLine() {
+    var r = await sb.rpc("app_my_line");
+    if (r.error) throw r.error;
+    S.line = norm(r.data || [], false); S.lineOwner = null;
+  }
+  async function loadRepLine(t) {
+    var r = await sb.from("customer_targets").select("customer_id,visit_day,tier,target_usd,avg_monthly_usd,flag,customers(name,area)").eq("roster_id", t.roster_id).limit(1000);
+    if (r.error) throw r.error;
+    var rows = r.data || [], map = {};
+    if (t.rep_id) {
+      var d = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
+      var v = await sb.from("visits").select("customer_id,result,reason,created_at").eq("rep_id", t.rep_id).gte("created_at", d).order("created_at");
+      (v.data || []).forEach(function (x) { map[x.customer_id] = x; });
+    }
+    rows.forEach(function (x) { var m = map[x.customer_id]; if (m) { x.res = m.result; x.reason = m.reason; } });
+    S.line = norm(rows, true); S.lineOwner = t;
+  }
+  async function loadTeam() {
+    var r = await sb.rpc("app_team_today");
+    if (r.error) throw r.error;
+    S.team = r.data || [];
+  }
+
+  /* ---------- queue (offline-safe visit saving) ---------- */
+  function qget() { try { return JSON.parse(localStorage.getItem("north-q") || "[]"); } catch (e) { return []; } }
+  function qset(a) { try { localStorage.setItem("north-q", JSON.stringify(a)); } catch (e) {} }
+  async function sendVisit(p) {
+    var r = await sb.rpc("app_record_visit", p);
+    if (r.error) { if (/not allowed|not in your line|bad result/.test(r.error.message)) return "reject"; return "retry"; }
+    return "ok";
+  }
+  async function flush() {
+    var q = qget(), keep = [];
+    for (var i = 0; i < q.length; i++) { var s = await sendVisit(q[i]); if (s === "retry") keep.push(q[i]); }
+    qset(keep);
+    return keep.length;
+  }
+
+  /* ---------- views ---------- */
+  function dayKey(d, w) { return d + "-" + w; }
+  function lineView() {
+    var rows = S.line, tn = todayName();
+    if (!S.day) S.day = tn || DAYS[0];
+    var h = "";
+    if (S.lineOwner) h += '<div class="card"><div class="row"><h2>خط ' + esc(S.lineOwner.name) + '</h2><button type="button" class="chip acc" data-a="backteam">رجوع</button></div></div>';
+    h += '<div class="grid2"><button type="button" class="opt" data-a="week" data-v="1" aria-pressed="' + (S.week === 1) + '">الأسبوع 1</button><button type="button" class="opt" data-a="week" data-v="2" aria-pressed="' + (S.week === 2) + '">الأسبوع 2</button></div>';
+    h += '<div class="grid6">';
+    DAYS.forEach(function (d) {
+      var n = rows.filter(function (x) { return x.day === dayKey(d, S.week); }).length;
+      h += '<button type="button" class="day' + (d === tn ? " today" : "") + '" data-a="day" data-v="' + d + '" aria-pressed="' + (S.day === d) + '">' + d.replace("الأ", "الأ") + '<br><span class="num mute" style="font-size:11px">' + n + "</span></button>";
+    });
+    h += "</div>";
+    var cur = rows.filter(function (x) { return x.day === dayKey(S.day, S.week); });
+    var done = cur.filter(function (x) { return x.res === "visited"; }).length, miss = cur.filter(function (x) { return x.res === "nosale"; }).length;
+    var sum = cur.reduce(function (a, x) { return a + Number(x.target || 0); }, 0);
+    h += '<div class="card"><div class="row"><h2>' + esc(S.day) + " · أسبوع " + S.week + '</h2><span class="chip acc num">' + cur.length + ' محل</span></div>' +
+      '<div class="bar"><i style="width:' + (cur.length ? Math.round((done + miss) / cur.length * 100) : 0) + '%"></i></div>' +
+      '<div class="mute num">تمت ' + done + " · لم تتم " + miss + " · هدف المحلات " + money(sum) + " شهرياً</div></div>";
+    if (!cur.length) return h + '<div class="card"><span class="mute">لا توجد محلات في هذا اليوم.</span></div>';
+    var byArea = {};
+    cur.forEach(function (x) { (byArea[x.area || "بدون منطقة"] = byArea[x.area || "بدون منطقة"] || []).push(x); });
+    Object.keys(byArea).sort().forEach(function (a) {
+      h += '<div class="area">' + esc(a) + ' <span class="mute num">(' + byArea[a].length + ")</span></div><div class=\"list\">";
+      byArea[a].forEach(function (x) {
+        var st = x.res === "visited" ? '<span class="chip ok">تمت</span>' : x.res === "nosale" ? '<span class="chip warn">' + esc(x.reason || "لم تتم") + "</span>" : "";
+        h += '<button type="button" class="item" data-a="shop" data-v="' + x.id + '"><span><b><i class="tier t-' + (TIER[x.tier] || "C") + '"></i>' + esc(x.name) + '</b><span class="mute num">هدف ' + money(x.target) + " · متوسط " + money(x.avg) + "</span></span>" + st + "</button>";
+      });
+      h += "</div>";
+    });
+    return h;
+  }
+  function goalsView() {
+    var rows = S.line, total = 0, avg = 0, byTier = { A: 0, B: 0, C: 0, Z: 0 }, byDay = {};
+    rows.forEach(function (x) { total += Number(x.target || 0); avg += Number(x.avg || 0); byTier[x.tier] = (byTier[x.tier] || 0) + 1; byDay[x.day] = (byDay[x.day] || 0) + Number(x.target || 0); });
+    var h = '<div class="card"><h2>هدفي الشهري</h2><div class="tiles"><div class="tile"><b>' + money(total) + "</b><span>الهدف</span></div><div class=\"tile\"><b>" + money(avg) + "</b><span>المتوسط الحالي</span></div><div class=\"tile\"><b>" + rows.length + "</b><span>محل</span></div></div>" +
+      '<div class="mute">النمو المطلوب +20% عن متوسط الأشهر الماضية. A كبار · B متوسط · C صغار · Z بدون مبيعات.</div></div>';
+    h += '<div class="card"><h3>توزيع المحلات</h3><div class="grid3"><div class="tile"><b>' + (byTier.A || 0) + "</b><span>A</span></div><div class=\"tile\"><b>" + (byTier.B || 0) + "</b><span>B</span></div><div class=\"tile\"><b>" + ((byTier.C || 0) + (byTier.Z || 0)) + "</b><span>C/صفر</span></div></div></div>";
+    var keys = Object.keys(byDay).sort();
+    if (keys.length) {
+      var mx = Math.max.apply(null, keys.map(function (k) { return byDay[k]; })) || 1;
+      h += '<div class="card"><h3>هدف كل يوم من الخط</h3>';
+      keys.forEach(function (k) { h += '<div class="row"><span>' + esc(k) + '</span><span class="num mute">' + money(byDay[k]) + '</span></div><div class="bar"><i style="width:' + Math.round(byDay[k] / mx * 100) + '%"></i></div>'; });
+      h += "</div>";
+    }
+    return h;
+  }
+  function teamView() {
+    var T = S.team, act = T.filter(function (t) { return t.active; }).length, vis = 0, ns = 0;
+    T.forEach(function (t) { vis += t.visited; ns += t.nosale; });
+    var h = '<div class="tiles"><div class="tile"><b>' + act + "/" + T.length + "</b><span>مفعّلون</span></div><div class=\"tile\"><b>" + vis + "</b><span>زيارات اليوم</span></div><div class=\"tile\"><b>" + ns + "</b><span>لم تتم</span></div></div><div class=\"list\">";
+    T.forEach(function (t, i) {
+      var chip = !t.active ? '<span class="chip warn">غير مفعّل</span>' : t.eval_level ? '<span class="chip ' + (t.eval_total >= 70 ? "ok" : "warn") + ' num">' + Math.round(t.eval_total) + "</span>" : "";
+      var last = t.last_at ? new Date(t.last_at).toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Damascus" }) : "—";
+      h += '<button type="button" class="item" data-a="rep" data-v="' + i + '"><span><b>' + esc(t.name) + '</b><span class="mute num">' + esc(t.channel || "") + " · " + t.shops + " محل · هدف " + money(t.target_month) + '</span><span class="mute num">اليوم: ' + t.visited + " زيارة · آخر نشاط " + last + "</span></span>" + chip + "</button>";
     });
     return h + "</div>";
   }
-  function repSummary() {
-    var r = repCount();
-    return '<div class="card"><h2>ملخص اليوم</h2></div>' +
-      '<div class="tiles"><div class="tile"><b>' + r.done + '</b><span>تمت زيارتها</span></div><div class="tile"><b>' + r.miss + '</b><span>لم تتم</span></div><div class="tile"><b>' + r.left + "</b><span>متبقية</span></div></div>";
-  }
-  function repSheet() {
-    var sh = S.sheet, s = S.shops.filter(function (x) { return x.id === sh.id; })[0];
-    var h = '<div class="sheet-bg" data-a="closebg"><div class="sheet" role="dialog" aria-label="زيارة"><div class="row"><div><h2>' + esc(s.name) + '</h2><div class="mute">' + esc(s.area) + '</div></div><button type="button" class="chip" data-a="close">إغلاق</button></div>' +
-      '<div class="step"><span class="mute">الموقع (تجريبي)</span><span class="chip ok">على بعد ' + s.dist + " م · الدقة 12 م</span></div>";
-    if (sh.step === "result") {
-      h += '<div class="grid2"><button type="button" class="opt" data-a="visited">تمت الزيارة</button><button type="button" class="opt" data-a="nosale">لم تتم</button></div>';
-    } else {
+
+  function sheetHtml() {
+    var sh = S.sheet; if (!sh) return "";
+    var x = S.line.filter(function (r) { return r.id === sh.id; })[0]; if (!x) return "";
+    var h = '<div class="sheet-bg" data-a="closebg"><div class="sheet" role="dialog" aria-label="محل"><div class="row"><div><h2>' + esc(x.name) + '</h2><div class="mute">' + esc(x.area) + " · " + esc(x.day) + '</div></div><button type="button" class="chip" data-a="close">إغلاق</button></div>';
+    if (sh.step === "info") {
+      h += '<div class="tiles"><div class="tile"><b>' + money(x.target) + "</b><span>هدف شهري</span></div><div class=\"tile\"><b>" + money(x.avg) + "</b><span>متوسط</span></div><div class=\"tile\"><b>" + esc(x.tier || "—") + "</b><span>فئة</span></div></div>";
+      if (x.flag) h += '<div class="step"><span class="mute">ملاحظة</span><span class="chip warn">' + esc(x.flag) + "</span></div>";
+      h += "<h3>هدف كل صنف</h3>";
+      if (sh.skus == null) h += '<div class="mute">جاري التحميل…</div>';
+      else if (!sh.skus.length) h += '<div class="mute">لا أصناف مستهدفة.</div>';
+      else sh.skus.forEach(function (k) { h += '<div class="sk"><span>' + esc(k.name) + '</span><span class="num">' + money(k.target_usd) + "</span></div>"; });
+      if (isRep(S.me.role) && !S.lineOwner) {
+        if (x.res) h += '<div class="step"><span>سُجّلت زيارة اليوم</span><span class="chip ok">' + (x.res === "visited" ? "تمت" : "لم تتم") + "</span></div>";
+        else h += '<button type="button" class="btn" data-a="startvisit">تسجيل زيارة</button>';
+      }
+    } else if (sh.step === "result") {
+      h += '<div class="step"><span class="mute">الموقع</span><span class="chip ' + (sh.geo ? "ok" : "warn") + '">' + (sh.geo ? "تم الالتقاط · دقة " + sh.acc + " م" : sh.geoMsg || "جاري تحديد الموقع…") + "</span></div>" +
+        '<div class="grid2"><button type="button" class="opt" data-a="visited">تمت الزيارة</button><button type="button" class="opt" data-a="nosale">لم تتم</button></div>';
+    } else if (sh.step === "reason") {
       h += "<h3>السبب</h3><div class=\"list\">";
       REASONS.forEach(function (r) { h += '<button type="button" class="opt" data-a="reason" data-v="' + esc(r) + '">' + esc(r) + "</button>"; });
       h += "</div>";
@@ -194,120 +258,85 @@ td { padding: 8px 6px; border-top: 1px solid var(--line); }
     return h + "</div></div>";
   }
 
-  /* ---------- supervisor views ---------- */
-  function supCalls() {
-    var done = S.calls.filter(function (c) { return c.res !== "pending"; }).length, pend = S.calls.filter(function (c) { return c.res === "pending"; });
-    var h = '<div class="card"><div class="row"><h2>اتصالات اليوم</h2><span class="chip acc num">' + done + " من " + S.calls.length + '</span></div><div class="bar"><i style="width:' + Math.round(done / S.calls.length * 100) + '%"></i></div><div class="mute">محلات زارها المندوبون أمس بلا فاتورة. اسأل: هل زاره المندوب وهل اشترى؟</div></div>';
-    if (S.noteFor) {
-      var nc = S.calls.filter(function (c) { return c.id === S.noteFor; })[0];
-      return h + '<div class="card"><h3>ملاحظة عن ' + esc(nc.shop) + '</h3><label class="mute" for="note">ماذا قال الزبون؟</label><textarea id="note" rows="3"></textarea><div class="grid2"><button type="button" class="btn" data-a="savenote">حفظ</button><button type="button" class="btn ghost" data-a="skipnote">تخطي</button></div></div>';
-    }
-    if (!pend.length) return h + '<div class="card"><b>انتهت اتصالات اليوم.</b><span class="mute">يظهر ملخصها في تبويب الملخص.</span></div>';
-    var c = pend[0];
-    if (S.confirmFake === c.id) {
-      return h + '<div class="card"><h3>تأكيد</h3><b>هل نفى الزبون أن المندوب زاره؟</b><span class="mute">سيصل إشعار فوري للإدارة </span><button type="button" class="btn bad" data-a="fakeyes">نعم، أكّد</button><button type="button" class="btn ghost" data-a="fakeno">رجوع</button></div>';
-    }
-    return h + '<div class="card"><div class="row"><h2>' + esc(c.shop) + '</h2><span class="chip">' + esc(c.date) + '</span></div><div class="mute">المندوب: ' + esc(c.rep) + '</div><div class="row"><span class="mute">الهاتف</span><b class="num" dir="ltr">' + esc(c.phone) + '</b></div>' +
-      '<div class="grid2"><button type="button" class="opt" data-a="call" data-v="ok">تم</button><button type="button" class="opt" data-a="call" data-v="no_answer">لم يرد</button><button type="button" class="opt" data-a="call" data-v="weak">ضعيفة</button><button type="button" class="opt" data-a="call" data-v="postponed">لاحقاً</button></div>' +
-      '<button type="button" class="btn bad" data-a="call" data-v="fake">وهمية: نفى الزيارة</button></div>';
-  }
-  var Q = [["rv", "هل زاره المندوب فعلاً؟"], ["ow", "هل صاحب المحل راضٍ عن التعامل؟"], ["pr", "هل الأسعار مطابقة؟"], ["st", "هل المخزون كافٍ؟"]];
-  function supAudit() {
-    var a = S.aud, h = "";
-    if (!a) {
-      h = '<div class="card"><h2>زيارة تدقيق</h2><div class="mute">يحدد التطبيق أقرب المحلات المسجّلة من موقعك.</div><button type="button" class="btn" data-a="auditstart">ابدأ بإرسال موقعي (تجريبي)</button></div>';
-      if (S.audits.length) {
-        h += "<h3>زيارات اليوم</h3><div class=\"list\">";
-        S.audits.forEach(function (x) { h += '<div class="item"><span><b>' + esc(x.name) + '</b><span class="mute num">' + x.score + " / 10</span></span><span class=\"chip " + (x.prio === "عاجل" ? "bad" : x.prio === "منخفض" ? "ok" : "acc") + '">' + x.prio + "</span></div>"; });
-        h += "</div>";
-      }
-      return h;
-    }
-    if (a.step === "pick") {
-      h = '<div class="card"><h2>اختر المحل</h2><div class="mute">أقرب المحلات المسجّلة (ضمن 250 م)</div></div><div class="list">';
-      NEARBY.forEach(function (n, i) { h += '<button type="button" class="item" data-a="pickstore" data-v="' + i + '"><b>' + esc(n[0]) + '</b><span class="chip">' + n[1] + " م</span></button>"; });
-      return h + '<button type="button" class="item" data-a="unreg"><b>محل غير مسجّل</b><span class="chip warn">إضافة</span></button></div>';
-    }
-    var qi = Q.map(function (q) { return q[0]; }).indexOf(a.step);
-    if (qi >= 0) {
-      return '<div class="card"><div class="mute">' + esc(a.name) + " · سؤال " + (qi + 1) + " من 4</div><h2>" + Q[qi][1] + '</h2><div class="grid3"><button type="button" class="opt" data-a="ans" data-v="y">نعم</button><button type="button" class="opt" data-a="ans" data-v="n">لا</button><button type="button" class="opt" data-a="ans" data-v="x">لا أعرف</button></div></div>';
-    }
-    if (a.step === "score") {
-      var g = ""; for (var i = 0; i <= 10; i++) g += '<button type="button" class="opt num" data-a="score" data-v="' + i + '">' + i + "</button>";
-      return '<div class="card"><div class="mute">' + esc(a.name) + "</div><h2>قيّم المحل من 0 إلى 10</h2><div class=\"grid6\">" + g + "</div></div>";
-    }
-    if (a.step === "phone") {
-      return '<div class="card"><h2>هاتف المحل</h2><label class="mute" for="ph">اكتب الرقم أو تخطَّ</label><input id="ph" type="tel" inputmode="tel" dir="ltr" placeholder="09xx xxx xxx"><div class="grid2"><button type="button" class="btn" data-a="phone">التالي</button><button type="button" class="btn ghost" data-a="phoneskip">تخطي</button></div><div class="mute">الصورة تبقى في تيليغرام ولا تُحفظ في قاعدة البيانات.</div></div>';
-    }
-    return '<div class="card"><h2>ملاحظة أخيرة</h2><label class="mute" for="an">اختياري</label><textarea id="an" rows="3"></textarea><button type="button" class="btn" data-a="finish">حفظ الزيارة</button></div>';
-  }
-  function supSummary() {
-    var c = { ok: 0, no_answer: 0, weak: 0, fake: 0, postponed: 0 };
-    S.calls.forEach(function (x) { if (c[x.res] != null) c[x.res]++; });
-    var done = S.calls.filter(function (x) { return x.res !== "pending"; }).length;
-    var avg = S.audits.length ? (S.audits.reduce(function (a, x) { return a + x.score; }, 0) / S.audits.length).toFixed(1) : "—";
-    var notv = S.audits.filter(function (x) { return x.rv === "n"; }).length;
-    var r = repCount();
-    var rows = [["إبراهيم علوش", 14], ["محمد قرموطة (حي)", r.done], ["محمد مكتبي", 8], ["معتز هنو", 12]];
-    var h = '<div class="card"><h2>ملخص اليوم</h2><div class="tiles"><div class="tile"><b>' + done + "/" + S.calls.length + "</b><span>اتصالات</span></div><div class=\"tile\"><b>" + S.audits.length + "</b><span>تدقيق</span></div><div class=\"tile\"><b class=\"num\">" + avg + "</b><span>متوسط التقييم</span></div></div>" +
-      '<div><span class="chip ok">تم ' + c.ok + '</span> <span class="chip">لم يرد ' + c.no_answer + '</span> <span class="chip warn">ضعيفة ' + c.weak + '</span> <span class="chip bad">وهمية ' + c.fake + '</span> <span class="chip acc">لاحقاً ' + c.postponed + "</span></div>" +
-      (notv ? '<div class="chip bad">مندوب لم يزر المحل: ' + notv + "</div>" : "") + "</div>" +
-      '<div class="card"><h3>زيارات المناديب اليوم</h3><div class="scroll-x"><table><thead><tr><th>المندوب</th><th>الزيارات</th></tr></thead><tbody>';
-    rows.forEach(function (x) { h += "<tr><td>" + esc(x[0]) + '</td><td class="num">' + x[1] + "</td></tr>"; });
-    return h + "</tbody></table></div></div>" + (c.fake ? '<div class="card"><b class="chip bad" style="justify-self:start">إشعار أُرسل للإدارة</b><span class="mute">زيارة وهمية مكتشفة اليوم: ' + c.fake + "</span></div>" : "");
-  }
-
   /* ---------- shell ---------- */
-  var NAV = { rep: [["line", "خط اليوم"], ["sum", "ملخصي"]], sup: [["calls", "الاتصالات"], ["audit", "التدقيق"], ["sum", "الملخص"]] };
+  function tabs() {
+    return isRep(S.me.role) ? [["line", "خطي"], ["goals", "أهدافي"]] : [["team", "الفريق"], ["line", "خط مندوب"]];
+  }
   function render() {
-    $("#b-rep").setAttribute("aria-pressed", S.role === "rep"); $("#b-sup").setAttribute("aria-pressed", S.role === "sup");
-    $("#who").textContent = S.role === "rep" ? "محمد قرموطة · مندوب" : "عبد الحميد كنجو · مشرف";
-    var t = S.tab[S.role], v;
-    if (S.role === "rep") v = t === "line" ? repLine() : repSummary();
-    else v = t === "calls" ? supCalls() : t === "audit" ? supAudit() : supSummary();
+    $("#who").textContent = S.me.name + " · " + (ROLE_AR[S.me.role] || S.me.role);
+    var TT = { line: S.lineOwner ? "خط " + S.lineOwner.name : "خطي", goals: "أهدافي", team: "الفريق" }; $("#ttl").textContent = TT[S.tab] || "جينا الشمالية";
+    var tb = tabs();
+    $("#nav").innerHTML = tb.map(function (t) { return '<button type="button" data-a="tab" data-v="' + t[0] + '"' + (S.tab === t[0] ? ' aria-current="page"' : "") + ">" + t[1] + "</button>"; }).join("");
+    var v;
+    if (S.tab === "team") v = teamView();
+    else if (S.tab === "goals") v = goalsView();
+    else if (!isRep(S.me.role) && !S.lineOwner) v = '<div class="card"><span class="mute">اختر مندوباً من تبويب «الفريق» لعرض خطه وأهدافه.</span></div>';
+    else if (!S.line.length) v = '<div class="card msg"><b>لا يوجد خط مرتبط بحسابك</b><span class="mute">إن كان هذا خطأ، أخبر الإدارة.</span></div>';
+    else v = lineView();
+    if (S.err) v = '<div class="card"><span class="chip bad">' + esc(S.err) + "</span></div>" + v;
     $("#view").innerHTML = v;
-    $("#nav").innerHTML = NAV[S.role].map(function (n) { return '<button type="button" data-a="tab" data-v="' + n[0] + '"' + (n[0] === t ? ' aria-current="page"' : "") + ">" + n[1] + "</button>"; }).join("");
-    $("#sheet-root").innerHTML = S.sheet ? repSheet() : "";
+    $("#sheet-root").innerHTML = sheetHtml();
   }
 
-  document.addEventListener("click", function (e) {
-    var el = e.target.closest("[data-a]"); if (!el) return;
-    var a = el.getAttribute("data-a"), v = el.getAttribute("data-v"), sh = S.sheet;
-    if (a === "closebg") { if (e.target !== el) return; S.sheet = null; return render(); }
-    if (a === "close") { S.sheet = null; return render(); }
-    if (a === "role") { S.role = v; S.sheet = null; return render(); }
-    if (a === "tab") { S.tab[S.role] = v; return render(); }
-    /* rep */
-    if (a === "open") { S.sheet = { id: +v, step: "result" }; return render(); }
-    if (a === "visited") { var s0 = S.shops.filter(function (x) { return x.id === sh.id; })[0]; s0.st = "visited"; S.sheet = null; toast("سُجّلت الزيارة"); return render(); }
-    if (a === "nosale") { sh.step = "reason"; return render(); }
-    if (a === "reason") { var s1 = S.shops.filter(function (x) { return x.id === sh.id; })[0]; s1.st = "nosale"; s1.reason = v; S.sheet = null; toast("سُجّل: " + v); return render(); }
-    /* supervisor calls */
-    if (a === "call") {
-      var pend = S.calls.filter(function (c) { return c.res === "pending"; })[0]; if (!pend) return;
-      if (v === "fake") { S.confirmFake = pend.id; return render(); }
-      pend.res = v; if (v === "weak") S.noteFor = pend.id; toast("سُجّلت النتيجة"); return render();
+  /* ---------- actions ---------- */
+  function getGeo(sh) {
+    if (!navigator.geolocation) { sh.geoMsg = "الموقع غير متاح"; render(); return; }
+    navigator.geolocation.getCurrentPosition(function (p) { sh.geo = { lat: p.coords.latitude, lng: p.coords.longitude }; sh.acc = Math.round(p.coords.accuracy); render(); },
+      function () { sh.geoMsg = "تعذر الموقع (تُسجَّل الزيارة بدونه)"; render(); }, { enableHighAccuracy: true, timeout: 9000, maximumAge: 20000 });
+  }
+  async function save(result, reason) {
+    var sh = S.sheet, p = { p_client_id: uuid(), p_customer: sh.id, p_result: result, p_reason: reason || "", p_lat: sh.geo ? sh.geo.lat : null, p_lng: sh.geo ? sh.geo.lng : null, p_acc: sh.acc || null };
+    var st = await sendVisit(p), x = S.line.filter(function (r) { return r.id === sh.id; })[0];
+    if (st === "reject") { toast("لا يمكن تسجيل هذه الزيارة"); S.sheet = null; render(); return; }
+    if (st === "retry") { var q = qget(); q.push(p); qset(q); toast("حُفظت على الجهاز وستُرسل عند عودة الاتصال"); } else toast("تم تسجيل الزيارة");
+    if (x) { x.res = result; x.reason = reason || null; }
+    S.sheet = null; render();
+  }
+  document.addEventListener("click", async function (e) {
+    var b = e.target.closest("[data-a]"); if (!b) return;
+    var a = b.getAttribute("data-a"), v = b.getAttribute("data-v");
+    if (a === "closebg") { if (e.target !== b) return; S.sheet = null; render(); return; }
+    if (a === "close") { S.sheet = null; render(); return; }
+    if (a === "retry") { location.reload(); return; }
+    if (a === "tab") { S.tab = v; S.err = ""; if (v === "line" && !isRep(S.me.role)) { S.lineOwner = null; } render(); return; }
+    if (a === "week") { S.week = Number(v); try { localStorage.setItem("north-week", v); } catch (x) {} render(); return; }
+    if (a === "day") { S.day = v; render(); return; }
+    if (a === "backteam") { S.tab = "team"; S.lineOwner = null; render(); return; }
+    if (a === "rep") {
+      var t = S.team[Number(v)];
+      if (!t.shops) { toast("لا خط لهذا المندوب"); return; }
+      try { S.err = ""; await loadRepLine(t); S.tab = "line"; S.day = ""; } catch (er) { S.err = "تعذر تحميل الخط"; }
+      render(); return;
     }
-    if (a === "fakeno") { S.confirmFake = null; return render(); }
-    if (a === "fakeyes") { var c1 = S.calls.filter(function (c) { return c.id === S.confirmFake; })[0]; c1.res = "fake"; S.confirmFake = null; S.noteFor = c1.id; toast("سُجّلت زيارة وهمية وأُبلغت الإدارة"); return render(); }
-    if (a === "savenote") { var c2 = S.calls.filter(function (c) { return c.id === S.noteFor; })[0]; c2.note = ($("#note") || {}).value || ""; S.noteFor = null; toast("حُفظت الملاحظة"); return render(); }
-    if (a === "skipnote") { S.noteFor = null; return render(); }
-    /* audit */
-    if (a === "auditstart") { S.aud = { step: "pick", name: "", d: {} }; return render(); }
-    if (a === "pickstore") { S.aud.name = NEARBY[+v][0]; S.aud.step = "rv"; return render(); }
-    if (a === "unreg") { S.aud.name = "محل غير مسجّل"; S.aud.step = "rv"; return render(); }
-    if (a === "ans") { var key = S.aud.step; S.aud.d[key] = v; var nx = { rv: "ow", ow: "pr", pr: "st", st: "score" }[key]; S.aud.step = nx; return render(); }
-    if (a === "score") { S.aud.d.score = +v; S.aud.step = "phone"; return render(); }
-    if (a === "phone" || a === "phoneskip") { S.aud.step = "note"; return render(); }
-    if (a === "finish") {
-      var d = S.aud.d, prio = d.rv === "n" ? "عاجل" : d.score >= 8 ? "منخفض" : "عادي";
-      S.audits.push({ name: S.aud.name, score: d.score, prio: prio, rv: d.rv }); S.aud = null; toast("سُجّلت زيارة التدقيق"); return render();
+    if (a === "shop") {
+      S.sheet = { id: v, step: "info", skus: null }; render();
+      var r = await sb.rpc("app_shop_skus", { p_customer: v });
+      if (S.sheet && S.sheet.id === v) { S.sheet.skus = r.error ? [] : r.data; render(); }
+      return;
     }
+    if (a === "startvisit") { S.sheet.step = "result"; render(); getGeo(S.sheet); return; }
+    if (a === "visited") { await save("visited", ""); return; }
+    if (a === "nosale") { S.sheet.step = "reason"; render(); return; }
+    if (a === "reason") { await save("nosale", v); return; }
   });
-  render();
+
+  /* ---------- start ---------- */
+  (async function () {
+    msg("جاري الدخول…", "لحظة من فضلك");
+    try {
+      if (!(await login())) return;
+      var u = (await sb.auth.getUser()).data.user;
+      var p = await sb.from("profiles").select("id,name,role,status").eq("id", u.id).maybeSingle();
+      if (!p.data || p.data.status !== "active") { await sb.auth.signOut(); msg("حسابك غير مفعّل", "تواصل مع الإدارة."); return; }
+      S.me = p.data;
+      if (isRep(S.me.role)) { S.tab = "line"; await loadMyLine(); flush(); }
+      else { S.tab = "team"; await loadTeam(); }
+      render();
+    } catch (er) { msg("حدث خطأ", String(er && er.message || er), true); }
+  })();
+  window.addEventListener("online", function () { if (S.me) flush(); });
 })();
+
 </script>
-
-<script>try{var T=window.Telegram&&Telegram.WebApp;if(T){T.ready();T.expand();try{T.setHeaderColor("#0B2447");}catch(e){}}}catch(e){}</script>
-
+</body>
 </html>
