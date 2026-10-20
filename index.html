@@ -58,6 +58,7 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
 .sheet{background:var(--bg);width:100%;max-width:480px;max-height:88%;overflow:auto;border-radius:20px 20px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));display:grid;gap:12px}
 .step{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 12px}
 #toast{position:fixed;inset:auto 16px calc(80px + env(safe-area-inset-bottom,0px)) 16px;z-index:60;background:var(--ink);color:var(--bg);padding:11px 14px;border-radius:12px;text-align:center;max-width:448px;margin:0 auto}
+.item .mute{display:block}
 .tier{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:6px}
 .t-A{background:#1F8A4C}.t-B{background:#D9A400}.t-C{background:#9DB3D6}.t-Z{background:#1B1B1B}
 .day{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:9px 2px;font-weight:600;text-align:center;font-size:12.5px}
@@ -92,7 +93,7 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
   if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
 
   var sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, storageKey: "north-auth", autoRefreshToken: true } });
-  var S = { me: null, tab: "", line: [], lineOwner: null, week: 1, day: "", team: [], sheet: null, busy: false, err: "" };
+  var S = { me: null, tab: "", line: [], lineOwner: null, week: 1, day: "", team: [], sup: null, sheet: null, busy: false, err: "" };
   try { S.week = Number(localStorage.getItem("north-week")) || 1; } catch (e) {}
 
   function todayName() {
@@ -119,7 +120,7 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
       j = await r.json();
     } catch (e) { msg("لا يوجد اتصال", "تأكد من الإنترنت ثم أعد المحاولة.", true); return false; }
     if (!j.ok) {
-      var m = { not_linked: ["حسابك غير مربوط بعد", "أرسل رسالة للبوت ليصل طلبك للإدارة، وبعد الموافقة يفتح التطبيق."], not_active: ["حسابك بانتظار التفعيل", "الإدارة لم تفعّل حسابك بعد."], expired: ["انتهت الجلسة", "أغلق التطبيق وافتحه من البوت من جديد."], bad_signature: ["تعذر التحقق", "افتح التطبيق من داخل بوت الشمالية."] }[j.err] || ["تعذر الدخول", "حاول مرة أخرى (" + (j.err || "؟") + ")."];
+      var m = { not_linked: ["حسابك غير مربوط بعد", "أرسل رسالة للبوت ليصل طلبك للإدارة، وبعد الموافقة يفتح التطبيق."], not_active: ["حسابك بانتظار التفعيل", "الإدارة لم تفعّل حسابك بعد."], expired: ["انتهت الجلسة", "أغلق التطبيق وافتحه من البوت من جديد."], bad_signature: ["تعذر التحقق", "افتح التطبيق من داخل بوت الشمالية."] }[j.err] || ["تعذر الدخول", "حاول مرة أخرى (" + (j.err || "؟") + (j.detail ? ": " + j.detail : "") + ")."];
       msg(m[0], m[1], j.err === "server" || j.err === "link_failed"); return false;
     }
     var o = await sb.auth.verifyOtp({ token_hash: j.token_hash, type: "magiclink" });
@@ -155,6 +156,12 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
     var r = await sb.rpc("app_team_today");
     if (r.error) throw r.error;
     S.team = r.data || [];
+  }
+
+  async function loadSup() {
+    var a = await sb.rpc("app_sup_today"), b = await sb.rpc("app_sup_audits", { p_days: 7 });
+    if (a.error) throw a.error;
+    S.sup = { today: a.data || [], audits: b.data || [] };
   }
 
   /* ---------- queue (offline-safe visit saving) ---------- */
@@ -232,6 +239,28 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
     return h + "</div>";
   }
 
+  function supView() {
+    var X = S.sup || { today: [], audits: [] }, T = X.today, ca = 0, cd = 0, au = 0;
+    T.forEach(function (t) { ca += t.calls_total; cd += t.calls_done; au += t.audits; });
+    var h = '<div class="tiles"><div class="tile"><b>' + cd + "/" + ca + "</b><span>اتصالات اليوم</span></div><div class=\"tile\"><b>" + au + "</b><span>زيارات تدقيق</span></div><div class=\"tile\"><b>" + T.length + "</b><span>مشرفون</span></div></div>";
+    if (!T.length) h += '<div class="card"><span class="mute">لا يوجد مشرفون مفعّلون بعد. يظهر المشرف هنا بعد تفعيله من البوت.</span></div>';
+    h += '<div class="list">';
+    T.forEach(function (t) {
+      var last = t.last_at ? new Date(t.last_at).toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Damascus" }) : "—";
+      h += '<div class="item"><span><b>' + esc(t.name) + '</b><span class="mute num">اتصالات ' + t.calls_done + "/" + t.calls_total + " · تم " + t.calls_ok + " · لم يرد " + t.calls_noans + (t.calls_fake ? " · وهمية " + t.calls_fake : "") + '</span><span class="mute num">تدقيق ' + t.audits + (t.avg_score != null ? " · متوسط " + t.avg_score + "/10" : "") + " · آخر نشاط " + last + "</span></span>" + (t.calls_fake ? '<span class="chip bad">وهمية</span>' : "") + "</div>";
+    });
+    h += "</div>";
+    if (X.audits.length) {
+      h += '<h3>آخر زيارات التدقيق (7 أيام)</h3><div class="list">';
+      X.audits.forEach(function (a) {
+        var d = new Date(a.created_at).toLocaleString("ar", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Damascus" });
+        h += '<div class="item"><span><b>' + esc(a.store || "محل غير مسجّل") + '</b><span class="mute">' + esc(a.sup_name || "") + (a.rep_name ? " · مندوب " + esc(a.rep_name) : "") + " · " + d + "</span>" + (a.note ? '<span class="mute">' + esc(a.note) + "</span>" : "") + '</span><span class="chip ' + (a.score >= 7 ? "ok" : a.score >= 4 ? "warn" : "bad") + ' num">' + (a.score != null ? a.score : "—") + "</span></div>";
+      });
+      h += "</div>";
+    }
+    return h;
+  }
+
   function sheetHtml() {
     var sh = S.sheet; if (!sh) return "";
     var x = S.line.filter(function (r) { return r.id === sh.id; })[0]; if (!x) return "";
@@ -260,15 +289,16 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
 
   /* ---------- shell ---------- */
   function tabs() {
-    return isRep(S.me.role) ? [["line", "خطي"], ["goals", "أهدافي"]] : [["team", "الفريق"], ["line", "خط مندوب"]];
+    return isRep(S.me.role) ? [["line", "خطي"], ["goals", "أهدافي"]] : [["team", "الفريق"], ["sup", "المشرفون"], ["line", "خط مندوب"]];
   }
   function render() {
     $("#who").textContent = S.me.name + " · " + (ROLE_AR[S.me.role] || S.me.role);
-    var TT = { line: S.lineOwner ? "خط " + S.lineOwner.name : "خطي", goals: "أهدافي", team: "الفريق" }; $("#ttl").textContent = TT[S.tab] || "جينا الشمالية";
+    var TT = { line: S.lineOwner ? "خط " + S.lineOwner.name : "خطي", goals: "أهدافي", team: "الفريق", sup: "المشرفون" }; $("#ttl").textContent = TT[S.tab] || "جينا الشمالية";
     var tb = tabs();
     $("#nav").innerHTML = tb.map(function (t) { return '<button type="button" data-a="tab" data-v="' + t[0] + '"' + (S.tab === t[0] ? ' aria-current="page"' : "") + ">" + t[1] + "</button>"; }).join("");
     var v;
     if (S.tab === "team") v = teamView();
+    else if (S.tab === "sup") v = supView();
     else if (S.tab === "goals") v = goalsView();
     else if (!isRep(S.me.role) && !S.lineOwner) v = '<div class="card"><span class="mute">اختر مندوباً من تبويب «الفريق» لعرض خطه وأهدافه.</span></div>';
     else if (!S.line.length) v = '<div class="card msg"><b>لا يوجد خط مرتبط بحسابك</b><span class="mute">إن كان هذا خطأ، أخبر الإدارة.</span></div>';
@@ -298,7 +328,7 @@ nav button[aria-current="page"]{color:var(--sky-3);font-weight:700;background:va
     if (a === "closebg") { if (e.target !== b) return; S.sheet = null; render(); return; }
     if (a === "close") { S.sheet = null; render(); return; }
     if (a === "retry") { location.reload(); return; }
-    if (a === "tab") { S.tab = v; S.err = ""; if (v === "line" && !isRep(S.me.role)) { S.lineOwner = null; } render(); return; }
+    if (a === "tab") { S.tab = v; S.err = ""; if (v === "sup") { try { await loadSup(); } catch (er) { S.err = "تعذر تحميل المشرفين"; } } if (v === "line" && !isRep(S.me.role)) { S.lineOwner = null; } render(); return; }
     if (a === "week") { S.week = Number(v); try { localStorage.setItem("north-week", v); } catch (x) {} render(); return; }
     if (a === "day") { S.day = v; render(); return; }
     if (a === "backteam") { S.tab = "team"; S.lineOwner = null; render(); return; }
